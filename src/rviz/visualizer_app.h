@@ -54,6 +54,7 @@ public:
 
   /** Start everything.  Pass in command line arguments.
    * @return false on failure, true on success. */
+
   bool init( int argc, char** argv );
 
 private Q_SLOTS:
