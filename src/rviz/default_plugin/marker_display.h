@@ -48,6 +48,18 @@
 #include "rviz/properties/bool_property.h"
 #include "rviz/selection/forwards.h"
 
+#include "rviz/msg_sync.hh"
+
+template<>
+inline visualization_msgs::MarkerArray::ConstPtr MsgSync<visualization_msgs::MarkerArray::ConstPtr>::get_nearest(const ros::Time &time) const {
+  auto iter = std::find_if(buffer_.begin(), buffer_.end(), [time](const visualization_msgs::MarkerArray::ConstPtr &x) { return x->markers[0].header.stamp >= time; });
+  if (iter == buffer_.end()) {
+    return buffer_.back();
+  } else {
+    return *iter;
+  }
+}
+
 namespace rviz
 {
 class IntProperty;
@@ -67,6 +79,7 @@ typedef std::pair<std::string, int32_t> MarkerID;
  *
  * Markers come in as visualization_msgs::Marker messages.  See the Marker message for more information.
  */
+
 class MarkerDisplay: public Display
 {
 Q_OBJECT
@@ -112,6 +125,8 @@ protected:
 
   RosTopicProperty* marker_topic_property_;
   IntProperty* queue_size_property_;
+
+  MsgSync<visualization_msgs::MarkerArray::ConstPtr> msg_queue_;
 
 private Q_SLOTS:
   void updateQueueSize();

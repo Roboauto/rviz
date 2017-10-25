@@ -42,18 +42,12 @@ private:
 
 template<class T>
 T MsgSync<T>::get_nearest(const ros::Time &time) const {
-    auto iter = std::find_if(buffer_.begin(), buffer_.end(), [time](const T &x) { return x->header.stamp > time; });
-
-    std::cout << "SEARCHING " << std::fixed << std::setw( 11 ) << std::setprecision( 6 )
-                                 << std::setfill( '0' ) << time.toSec() << " found: ";
+    auto iter = std::find_if(buffer_.begin(), buffer_.end(), [time](const T &x) { return x->header.stamp >= time; });
 
     if (iter == buffer_.end()) {
-        std::cout << std::fixed << std::setw( 11 ) << std::setprecision( 6 )
-                  << std::setfill( '0' ) << buffer_.back()->header.stamp.toSec() << std::endl;
         return buffer_.back();
     } else {
-        std::cout << (*iter)->header.stamp.toSec() << std::endl;
-        std::cout << std::distance(buffer_.begin(),iter) << " out of " << buffer_.size() << std::endl;
         return *iter;
     }
 }
+

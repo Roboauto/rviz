@@ -34,6 +34,8 @@
 
 #include "rviz/message_filter_display.h"
 
+#include "rviz/msg_sync.hh"
+
 namespace laser_geometry
 {
 class LaserProjection;
@@ -59,7 +61,6 @@ public:
 
 private Q_SLOTS:
   void updateQueueSize();
-
 protected:
   /** @brief Do initialization. Overridden from MessageFilterDisplay. */
   virtual void onInitialize();
@@ -73,6 +74,7 @@ protected:
 
   laser_geometry::LaserProjection* projector_;
   ros::Duration filter_tolerance_;
+  MsgSync<sensor_msgs::LaserScanConstPtr> msg_sync_;
 };
 
 } // namespace rviz

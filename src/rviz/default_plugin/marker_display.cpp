@@ -58,7 +58,7 @@ namespace rviz
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 MarkerDisplay::MarkerDisplay()
-  : Display()
+  : Display(), msg_queue_(100)
 {
   marker_topic_property_ = new RosTopicProperty( "Marker Topic", "visualization_marker",
                                                  QString::fromStdString( ros::message_traits::datatype<visualization_msgs::Marker>() ),
@@ -82,6 +82,8 @@ void MarkerDisplay::onInitialize()
                                                                   fixed_frame_.toStdString(),
                                                                   queue_size_property_->getInt(),
                                                                   update_nh_ );
+
+  msg_queue_.setSize(queue_size_property_->getInt());
 
   tf_filter_->connectInput(sub_);
   tf_filter_->registerCallback(boost::bind(&MarkerDisplay::incomingMarker, this, _1));
@@ -141,6 +143,7 @@ void MarkerDisplay::onDisable()
 void MarkerDisplay::updateQueueSize()
 {
   tf_filter_->setQueueSize( (uint32_t) queue_size_property_->getInt() );
+  msg_queue_.setSize(queue_size_property_->getInt());
 }
 
 void MarkerDisplay::updateTopic()
@@ -252,6 +255,9 @@ void MarkerDisplay::deleteMarkerStatus(MarkerID id)
 
 void MarkerDisplay::incomingMarkerArray(const visualization_msgs::MarkerArray::ConstPtr& array)
 {
+  msg_queue_.add(array);
+  emitTimeSignal( array->markers[0].header.stamp );
+/*
   std::vector<visualization_msgs::Marker>::const_iterator it = array->markers.begin();
   std::vector<visualization_msgs::Marker>::const_iterator end = array->markers.end();
   for (; it != end; ++it)
@@ -259,13 +265,18 @@ void MarkerDisplay::incomingMarkerArray(const visualization_msgs::MarkerArray::C
     const visualization_msgs::Marker& marker = *it;
     tf_filter_->add(visualization_msgs::Marker::Ptr(new visualization_msgs::Marker(marker)));
   }
+*/
 }
 
 void MarkerDisplay::incomingMarker( const visualization_msgs::Marker::ConstPtr& marker )
 {
   boost::mutex::scoped_lock lock(queue_mutex_);
 
-  message_queue_.push_back(marker);
+  visualization_msgs::MarkerArray a;
+  a.markers.push_back(*marker);
+
+  msg_queue_.add(visualization_msgs::MarkerArray::ConstPtr(new visualization_msgs::MarkerArray(a)));
+  emitTimeSignal( marker->header.stamp );
 }
 
 void MarkerDisplay::failedMarker(const ros::MessageEvent<visualization_msgs::Marker>& marker_evt, tf::FilterFailureReason reason)
@@ -446,10 +457,29 @@ void MarkerDisplay::update(float wall_dt, float ros_dt)
 {
   V_MarkerMessage local_queue;
 
-  {
-    boost::mutex::scoped_lock lock(queue_mutex_);
+  if(!msg_queue_.empty()) {
+    if (context_->getFrameManager()->getSyncMode() != FrameManager::SyncMode::SyncOff) {
+      ros::Time rviz_time = context_->getFrameManager()->getTime();
+      const auto data = msg_queue_.get_nearest(rviz_time);
 
-    local_queue.swap( message_queue_ );
+      if (context_->getFrameManager()->getSyncMode() == FrameManager::SyncExact && data->markers.size() > 0  &&
+        rviz_time != data->markers[0].header.stamp) { // All markers in array should have the same stamp
+        std::ostringstream s;
+        s << "Time-syncing active and no image at timestamp " << rviz_time.toSec() << ".";
+        setStatus(StatusProperty::Warn, "Time", s.str().c_str());
+        return;
+      }
+        deleteAllMarkers();
+
+        for (const auto& x : data->markers) {
+          local_queue.push_back(visualization_msgs::Marker::Ptr(new visualization_msgs::Marker(x)));
+      }
+    } else {
+        deleteAllMarkers();
+        for (const auto& x : msg_queue_.getLast()->markers) {
+            local_queue.push_back(visualization_msgs::Marker::Ptr(new visualization_msgs::Marker(x)));
+        }
+    }
   }
 
   if ( !local_queue.empty() )

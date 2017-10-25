@@ -49,6 +49,7 @@ namespace rviz
 LaserScanDisplay::LaserScanDisplay()
   : point_cloud_common_( new PointCloudCommon( this ))
   , projector_( new laser_geometry::LaserProjection() )
+  , msg_sync_(10)
 {
   queue_size_property_ = new IntProperty( "Queue Size", 10,
                                           "Advanced: set the size of the incoming LaserScan message queue. "
@@ -76,40 +77,65 @@ void LaserScanDisplay::onInitialize()
 void LaserScanDisplay::updateQueueSize()
 {
   tf_filter_->setQueueSize( (uint32_t) queue_size_property_->getInt() );
+  msg_sync_.setSize( (uint32_t) queue_size_property_->getInt() );
 }
 
 void LaserScanDisplay::processMessage( const sensor_msgs::LaserScanConstPtr& scan )
 {
-  sensor_msgs::PointCloudPtr cloud( new sensor_msgs::PointCloud );
-
-  std::string frame_id = scan->header.frame_id;
-
-  // Compute tolerance necessary for this scan
-  ros::Duration tolerance(scan->time_increment * scan->ranges.size());
-  if (tolerance > filter_tolerance_)
-  {
-    filter_tolerance_ = tolerance;
-    tf_filter_->setTolerance(filter_tolerance_);
-  }
-
-  try
-  {
-    projector_->transformLaserScanToPointCloud( fixed_frame_.toStdString(), *scan, *cloud, *context_->getTFClient(),
-                                                laser_geometry::channel_option::Intensity );
-  }
-  catch (tf::TransformException& e)
-  {
-    ROS_DEBUG( "LaserScan [%s]: failed to transform scan: %s.  This message should not repeat (tolerance should now be set on our tf::MessageFilter).",
-               qPrintable( getName() ), e.what() );
-    return;
-  }
-
-  point_cloud_common_->addMessage( cloud );
+  msg_sync_.add(scan);
 }
 
 void LaserScanDisplay::update( float wall_dt, float ros_dt )
 {
-  point_cloud_common_->update( wall_dt, ros_dt );
+  sensor_msgs::LaserScanConstPtr scan{};
+  sensor_msgs::PointCloudPtr cloud( new sensor_msgs::PointCloud );
+
+  if(!msg_sync_.empty()) {
+    if (context_->getFrameManager()->getSyncMode() != FrameManager::SyncMode::SyncOff) {
+      ros::Time rviz_time = context_->getFrameManager()->getTime();
+      const auto data = msg_sync_.get_nearest(rviz_time);
+
+      if (context_->getFrameManager()->getSyncMode() == FrameManager::SyncExact &&
+          rviz_time != data->header.stamp) {
+        std::ostringstream s;
+        s << "Time-syncing active and no image at timestamp " << rviz_time.toSec() << ".";
+        setStatus(StatusProperty::Warn, "Time", s.str().c_str());
+        return;
+      }
+
+      scan = data;
+
+    } else {
+      scan = msg_sync_.getLast();
+    }
+
+    std::string frame_id = scan->header.frame_id;
+
+    // Compute tolerance necessary for this scan
+    ros::Duration tolerance(scan->time_increment * scan->ranges.size());
+    if (tolerance > filter_tolerance_)
+    {
+      filter_tolerance_ = tolerance;
+      tf_filter_->setTolerance(filter_tolerance_);
+    }
+
+    try
+    {
+      projector_->transformLaserScanToPointCloud( fixed_frame_.toStdString(), *scan, *cloud, *context_->getTFClient(),
+                                                  laser_geometry::channel_option::Intensity );
+    }
+    catch (tf::TransformException& e)
+    {
+      ROS_DEBUG( "LaserScan [%s]: failed to transform scan: %s.  This message should not repeat (tolerance should now be set on our tf::MessageFilter).",
+                 qPrintable( getName() ), e.what() );
+      return;
+    }
+    point_cloud_common_->reset();
+    point_cloud_common_->addMessage( cloud );
+
+    point_cloud_common_->update( wall_dt, ros_dt );
+
+  }
 }
 
 void LaserScanDisplay::reset()
