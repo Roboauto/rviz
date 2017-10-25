@@ -58,7 +58,7 @@ namespace rviz
 
 ImageDisplay::ImageDisplay()
   : ImageDisplayBase()
-  , texture_()
+  , texture_(), msg_sync_(2)
 {
   normalize_property_ = new BoolProperty( "Normalize Range", true,
                                           "If set to true, will try to estimate the range of possible values from the received images.",
@@ -177,6 +177,13 @@ void ImageDisplay::updateNormalizeOptions()
   }
 }
 
+void ImageDisplay::updateQueueSize()
+{
+  msg_sync_.setSize((uint32_t) queue_size_property_->getInt());
+
+  ImageDisplayBase::updateQueueSize();
+}
+
 void ImageDisplay::clear()
 {
   texture_.clear();
@@ -191,7 +198,27 @@ void ImageDisplay::update( float wall_dt, float ros_dt )
 {
   try
   {
-    texture_.update();
+    if(!msg_sync_.empty()) {
+      if (context_->getFrameManager()->getSyncMode() != FrameManager::SyncMode::SyncOff) {
+        ros::Time rviz_time = context_->getFrameManager()->getTime();
+        const auto image = msg_sync_.get_nearest(rviz_time);
+
+        if (context_->getFrameManager()->getSyncMode() == FrameManager::SyncExact &&
+            rviz_time != image->header.stamp) {
+          std::ostringstream s;
+          s << "Time-syncing active and no image at timestamp " << rviz_time.toSec() << ".";
+          setStatus(StatusProperty::Warn, "Time", s.str().c_str());
+          return;
+        }
+
+        if (image) {
+          texture_.addMessage(image);
+        }
+      } else {
+        texture_.addMessage(msg_sync_.getLast());
+      }
+      texture_.update();
+    }
 
     //make sure the aspect ratio of the image is preserved
     float win_width = render_panel_->width();
@@ -242,7 +269,7 @@ void ImageDisplay::processMessage(const sensor_msgs::Image::ConstPtr& msg)
     got_float_image_ = got_float_image;
     updateNormalizeOptions();
   }
-  texture_.addMessage(msg);
+  msg_sync_.add(msg);
 }
 
 } // namespace rviz
