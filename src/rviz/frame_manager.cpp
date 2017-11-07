@@ -70,16 +70,6 @@ void FrameManager::update()
       case SyncExact:
         break;
       case SyncApprox:
-        // adjust current time offset to sync source
-        current_delta_ = 0.7*current_delta_ + 0.3*sync_delta_;
-        try
-        {
-          sync_time_ = ros::Time::now()-ros::Duration(current_delta_);
-        }
-        catch (...)
-        {
-          sync_time_ = ros::Time::now();
-        }
         break;
     }
   }
@@ -127,20 +117,7 @@ void FrameManager::syncTime( ros::Time time )
       sync_time_ = time;
       break;
     case SyncApprox:
-      if ( time == ros::Time(0) )
-      {
-        sync_delta_ = 0;
-        return;
-      }
-      // avoid exception due to negative time
-      if ( ros::Time::now() >= time )
-      {
-        sync_delta_ = (ros::Time::now() - time).toSec();
-      }
-      else
-      {
-        setSyncMode( SyncApprox );
-      }
+      sync_time_ = time;
       break;
   }
 }
@@ -161,24 +138,7 @@ bool FrameManager::adjustTime( const std::string &frame, ros::Time& time )
       time = sync_time_;
       break;
     case SyncApprox:
-      {
-        // if we don't have tf info for the given timestamp, use the latest available
-        ros::Time latest_time;
-        std::string error_string;
-        int error_code;
-        error_code = tf_->getLatestCommonTime( fixed_frame_, frame, latest_time, &error_string );
-
-        if ( error_code != 0 )
-        {
-          ROS_ERROR("Error getting latest time from frame '%s' to frame '%s': %s (Error code: %d)", frame.c_str(), fixed_frame_.c_str(), error_string.c_str(), error_code);
-          return false;
-        }
-
-        if ( latest_time > sync_time_ )
-        {
-          time = sync_time_;
-        }
-      }
+      time = sync_time_;
       break;
   }
   return true;

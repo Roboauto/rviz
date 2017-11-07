@@ -44,6 +44,7 @@
 # include "rviz/properties/bool_property.h"
 # include "rviz/properties/float_property.h"
 # include "rviz/properties/int_property.h"
+# include "rviz/msg_sync.hh"
 #endif
 
 
@@ -74,7 +75,7 @@ public:
 
 public Q_SLOTS:
   virtual void updateNormalizeOptions();
-
+  virtual void updateQueueSize();
 protected:
   // overrides from Display
   virtual void onEnable();
@@ -101,6 +102,7 @@ private:
   FloatProperty* max_property_;
   IntProperty* median_buffer_size_property_;
   bool got_float_image_;
+  MsgSync<sensor_msgs::Image::ConstPtr> msg_sync_;
 };
 
 } // namespace rviz
