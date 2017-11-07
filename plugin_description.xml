@@ -275,4 +275,12 @@
     </description>
   </class>
 
+  <class name="rviz/CameraToGround_Display"
+         type="rviz::CameraToGround_Display"
+         base_class_type="rviz::Display">
+    <description>
+      Display of satellite image map.
+    </description>
+  </class>
+
 </library>
