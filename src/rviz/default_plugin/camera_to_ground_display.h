@@ -37,6 +37,8 @@
 #include <tf/transform_listener.h>
 #include "tools/projection.h"
 
+#include "rviz/msg_sync.hh"
+
 namespace Ogre {
 class ManualObject;
 }
@@ -45,9 +47,7 @@ namespace rviz {
 
 class FloatProperty;
 class IntProperty;
-//class Property;
 class RosTopicProperty;
-//class StringProperty;
 class TfFrameProperty;
 class EnumProperty;
 
@@ -80,6 +80,7 @@ protected Q_SLOTS:
     void updateOriginFrame();
     void fillTransportOptionList(EnumProperty* property);
     void updateTopic();
+    virtual void updateQueueSize();
 
 protected:
 
@@ -107,6 +108,8 @@ protected:
     unsigned int map_id_;
     unsigned int scene_id_;
 
+    MsgSync<sensor_msgs::Image::ConstPtr> msg_sync_;
+
     image_transport::ImageTransport *it_;
 
     /// Instance of a tile w/ associated ogre data
@@ -122,6 +125,7 @@ protected:
     ros::Subscriber camera_info_sub_;
 
     cv::Mat camera_image_;
+
     sensor_msgs::CameraInfo camera_info_;
     Projection *projectionTool_;
     tf::TransformListener listener_;
@@ -138,6 +142,7 @@ protected:
     TfFrameProperty *frame_property_;
     TfFrameProperty *origin_frame_property_;
     BoolProperty* unreliable_property_;
+    IntProperty* queue_size_property_;
 
     std::set<std::string> transport_plugin_types_;
 
@@ -160,6 +165,8 @@ protected:
     const int TEXTURE_PIXEL_PER_METER_MAX_ = 100;
     const int TEXTURE_PIXEL_PER_METER_MIN_ = 2;
     const int TEXTURE_PIXEL_PER_METER_INIT_ = 20;
+
+    const int QUEUE_DEFAULT_SIZE = 100;
 
 
     float alpha_;

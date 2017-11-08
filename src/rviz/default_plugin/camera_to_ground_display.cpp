@@ -114,7 +114,8 @@ namespace rviz {
     CameraToGround_Display::CameraToGround_Display() : Display(),
                                                        image_sub_(),
                                                        map_id_(0),
-                                                       scene_id_(0) {
+                                                       scene_id_(0),
+                                                       msg_sync_(QUEUE_DEFAULT_SIZE){
 
         static unsigned int map_ids = 0;
         map_id_ = map_ids++; //  global counter of map ids
@@ -191,6 +192,13 @@ namespace rviz {
                                                  this,
                                                  SLOT( updateTopic() ));
 
+        queue_size_property_ = new IntProperty( "Queue Size", QUEUE_DEFAULT_SIZE,
+                                                "Advanced: set the size of the incoming message queue.  Increasing this "
+                                                        "is useful if your incoming TF data is delayed significantly from your"
+                                                        " image data, but it can greatly increase memory usage if the messages are big.",
+                                                this, SLOT( updateQueueSize() ));
+        queue_size_property_->setMin( 1 );
+
         projectionTool_ = new Projection(update_nh_,
                                         frame_property_->getStdString(),
                                         origin_frame_property_->getStdString(),
@@ -236,14 +244,12 @@ namespace rviz {
 
         setStatus(StatusProperty::Ok, "Image", "Images received");
 
-        cv::Mat img = cv::Mat(msg->height, msg->width, CV_8UC3, (char*)&*msg->data.begin() ).clone();
-
-        projectionTool_->warp_image_to_bird_view(img, camera_image_);
+        msg_sync_.add(msg);
 
         messages_received_++;
         setStatus(StatusProperty::Ok, "Image", QString::number(messages_received_) + " images received");
 
-        assembleScene();
+        //assembleScene();
     }
 
 
@@ -265,14 +271,11 @@ namespace rviz {
             image_sub_.reset(new image_transport::SubscriberFilter());
 
             if (!camera_name_->getTopicStd().empty() && !transport_property_->getStdString().empty() ) {
-
                 // Determine UDP vs TCP transport for user selection.
-                if (unreliable_property_->getBool())
-                {
+                if (unreliable_property_->getBool()) {
                     image_sub_->subscribe(*it_, camera_name_->getTopicStd(), 1,
                                     image_transport::TransportHints(transport_property_->getStdString(), ros::TransportHints().unreliable()));
-                }
-                else{
+                } else{
                     image_sub_->subscribe(*it_, camera_name_->getTopicStd(), 1,
                                     image_transport::TransportHints(transport_property_->getStdString()));
                 }
@@ -281,12 +284,10 @@ namespace rviz {
             }
             setStatus(StatusProperty::Ok, "Topic", "OK");
         }
-        catch (ros::Exception& e)
-        {
+        catch (ros::Exception& e) {
             setStatus(StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
         }
-        catch (image_transport::Exception& e)
-        {
+        catch (image_transport::Exception& e) {
             setStatus( StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
         }
 
@@ -408,9 +409,37 @@ namespace rviz {
 
     void CameraToGround_Display::update(float, float) {
         //  creates all geometry, if necessary
-        //assembleScene();
+
+        sensor_msgs::ImageConstPtr image = nullptr;
+
+        if(!msg_sync_.empty()) {
+            if (context_->getFrameManager()->getSyncMode() != FrameManager::SyncMode::SyncOff) {
+                ros::Time rviz_time = context_->getFrameManager()->getTime();
+                image = msg_sync_.get_nearest(rviz_time);
+
+                if (context_->getFrameManager()->getSyncMode() == FrameManager::SyncExact &&
+                    rviz_time != image->header.stamp) {
+                    std::ostringstream s;
+                    s << "Time-syncing active and no image at timestamp " << rviz_time.toSec() << ".";
+                    setStatus(StatusProperty::Warn, "Time", s.str().c_str());
+                    return;
+                }
+
+
+            } else {
+                image = msg_sync_.getLast();
+            }
+
+            if (image) {
+                cv::Mat img = cv::Mat(image->height, image->width, CV_8UC3, (char*)&*image->data.begin() ).clone();
+                projectionTool_->warp_image_to_bird_view(img, camera_image_);
+            }
+        }
+
+        assembleScene();
         //  draw
-        //context_->queueRender();
+        context_->queueRender();
+        //ROS_INFO("Rendering scene");
     }
 
 
@@ -615,6 +644,11 @@ namespace rviz {
         reset();
         subscribe();
         //context_->queueRender();
+    }
+
+
+    void CameraToGround_Display::updateQueueSize() {
+        msg_sync_.setSize((uint32_t) queue_size_property_->getInt());
     }
 
 
