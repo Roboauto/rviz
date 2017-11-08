@@ -1,10 +1,21 @@
 include_directories(.)
 
+if (UseQt5)
+  find_package(Qt5 COMPONENTS Core Gui Network Concurrent REQUIRED)
+else()
+  find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
+  include(${QT_USE_FILE})
+endif()
+
+find_package(OpenCV REQUIRED)
+
 set(SOURCE_FILES
   axes_display.cpp
   camera_display.cpp
   covariance_visual.cpp
   covariance_property.cpp
+  camera_to_ground_display.cpp
+  tools/projection.cpp
   depth_cloud_display.cpp
   depth_cloud_mld.cpp
   effort_display.cpp
@@ -79,6 +90,7 @@ target_link_libraries(${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME}
   ${catkin_LIBRARIES}
   ${OGRE_OV_LIBRARIES_ABS}
   ${QT_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 install(TARGETS ${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME}
