@@ -45,6 +45,8 @@
 # include "rviz/image/image_display_base.h"
 # include "rviz/image/ros_image_texture.h"
 # include "rviz/render_panel.h"
+
+#include "rviz/msg_sync.hh"
 #endif
 
 namespace Ogre
@@ -135,6 +137,8 @@ private:
 
   sensor_msgs::CameraInfo::ConstPtr current_caminfo_;
   boost::mutex caminfo_mutex_;
+
+  MsgSync<sensor_msgs::Image::ConstPtr> msg_sync_;
 
   bool new_caminfo_;
 

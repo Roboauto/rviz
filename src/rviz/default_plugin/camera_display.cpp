@@ -86,6 +86,7 @@ CameraDisplay::CameraDisplay()
   , new_caminfo_( false )
   , force_render_( false )
   , caminfo_ok_(false)
+  , msg_sync_(100)
 {
   image_position_property_ = new EnumProperty( "Image Rendering", BOTH,
                                                "Render the image behind all other geometry or overlay it on top, or both.",
@@ -314,6 +315,8 @@ void CameraDisplay::forceRender()
 void CameraDisplay::updateQueueSize()
 {
   caminfo_tf_filter_->setQueueSize( (uint32_t) queue_size_property_->getInt() );
+  msg_sync_.setSize((uint32_t) queue_size_property_->getInt());
+
   ImageDisplayBase::updateQueueSize();
 }
 
@@ -337,13 +340,32 @@ void CameraDisplay::update( float wall_dt, float ros_dt )
 {
   try
   {
-    if( texture_.update() || force_render_ )
-    {
-      caminfo_ok_ = updateCamera();
-      force_render_ = false;
+    if(!msg_sync_.empty()) {
+      if (context_->getFrameManager()->getSyncMode() != FrameManager::SyncMode::SyncOff) {
+        ros::Time rviz_time = context_->getFrameManager()->getTime();
+        const auto image = msg_sync_.get_nearest(rviz_time);
+
+        if (context_->getFrameManager()->getSyncMode() == FrameManager::SyncExact &&
+            rviz_time != image->header.stamp) {
+          std::ostringstream s;
+          s << "Time-syncing active and no image at timestamp " << rviz_time.toSec() << ".";
+          setStatus(StatusProperty::Warn, "Time", s.str().c_str());
+          return;
+        }
+
+        if (image) {
+          texture_.addMessage(image);
+        }
+      } else {
+        texture_.addMessage(msg_sync_.getLast());
+      }
+
+      if (texture_.update() || force_render_) {
+        caminfo_ok_ = updateCamera();
+        force_render_ = false;
+      }
     }
-  }
-  catch( UnsupportedImageEncoding& e )
+  } catch( UnsupportedImageEncoding& e )
   {
     setStatus( StatusProperty::Error, "Image", e.what() );
   }
@@ -370,17 +392,6 @@ bool CameraDisplay::updateCamera()
   if( !validateFloats( *info ))
   {
     setStatus( StatusProperty::Error, "Camera Info", "Contains invalid floating point values (nans or infs)" );
-    return false;
-  }
-
-  // if we're in 'exact' time mode, only show image if the time is exactly right
-  ros::Time rviz_time = context_->getFrameManager()->getTime();
-  if ( context_->getFrameManager()->getSyncMode() == FrameManager::SyncExact &&
-      rviz_time != image->header.stamp )
-  {
-    std::ostringstream s;
-    s << "Time-syncing active and no image at timestamp " << rviz_time.toSec() << ".";
-    setStatus( StatusProperty::Warn, "Time", s.str().c_str() );
     return false;
   }
 
@@ -513,7 +524,7 @@ bool CameraDisplay::updateCamera()
 
 void CameraDisplay::processMessage(const sensor_msgs::Image::ConstPtr& msg)
 {
-  texture_.addMessage(msg);
+  msg_sync_.add(msg);
 }
 
 void CameraDisplay::caminfoCallback( const sensor_msgs::CameraInfo::ConstPtr& msg )
