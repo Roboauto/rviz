@@ -176,9 +176,9 @@ namespace rviz {
                                           SLOT( updateTopic() ));
         connect(transport_property_, SIGNAL( requestOptions( EnumProperty* )), this, SLOT( fillTransportOptionList( EnumProperty* )));
 
-        frame_property_ = new TfFrameProperty("Camera frame", "camera",
-                                              "tf frame of projected camera", this,
-                                              nullptr, false, SLOT(updateCameraFrame()), this);
+//        frame_property_ = new TfFrameProperty("Camera frame", "camera",
+//                                              "tf frame of projected camera", this,
+//                                              nullptr, false, SLOT(updateCameraFrame()), this);
 
         origin_frame_property_ = new TfFrameProperty("Origin frame",
                                                      "ground",
@@ -200,11 +200,11 @@ namespace rviz {
         queue_size_property_->setMin( 1 );
 
         projectionTool_ = new Projection(update_nh_,
-                                        frame_property_->getStdString(),
-                                        origin_frame_property_->getStdString(),
-                                        texture_length_,
-                                        texture_width_,
-                                        texture_pixel_per_meter_);
+                                         CAMERA_FRAME,
+                                         origin_frame_property_->getStdString(),
+                                         texture_length_,
+                                         texture_width_,
+                                         texture_pixel_per_meter_);
 
         it_ = new image_transport::ImageTransport(update_nh_);
 
@@ -220,7 +220,7 @@ namespace rviz {
 
     void CameraToGround_Display::onInitialize() {
 
-        frame_property_->setFrameManager(context_->getFrameManager());
+//        frame_property_->setFrameManager(context_->getFrameManager());
         origin_frame_property_->setFrameManager(context_->getFrameManager());
         scanForTransportSubscriberPlugins();
         ROS_INFO("Initialization done");
@@ -350,7 +350,7 @@ namespace rviz {
     void CameraToGround_Display::updateCameraName() {
         delete projectionTool_;
         projectionTool_ = new Projection(update_nh_,
-                                        frame_property_->getStdString(),
+                                        CAMERA_FRAME,//frame_property_->getStdString(),
                                         origin_frame_property_->getStdString(),
                                         texture_length_,
                                         texture_width_,
@@ -359,15 +359,15 @@ namespace rviz {
 
 
 
-    void CameraToGround_Display::updateCameraFrame () {
-        delete projectionTool_;
-        projectionTool_ = new Projection(update_nh_,
-                                        frame_property_->getStdString(),
-                                        origin_frame_property_->getStdString(),
-                                        texture_length_,
-                                        texture_width_,
-                                        texture_pixel_per_meter_);
-    }
+//    void CameraToGround_Display::updateCameraFrame () {
+//        delete projectionTool_;
+//        projectionTool_ = new Projection(update_nh_,
+//                                         CAMERA_FRAME,//frame_property_->getStdString(),
+//                                        origin_frame_property_->getStdString(),
+//                                        texture_length_,
+//                                        texture_width_,
+//                                        texture_pixel_per_meter_);
+//    }
 
 
     void CameraToGround_Display::updateOriginFrame () {
@@ -430,6 +430,8 @@ namespace rviz {
                 image = msg_sync_.getLast();
             }
 
+            CAMERA_FRAME = image->header.frame_id;
+            projectionTool_->set_cameraFrame(CAMERA_FRAME);
             if (image) {
                 cv::Mat img = cv::Mat(image->height, image->width, CV_8UC3, (char*)&*image->data.begin() ).clone();
                 projectionTool_->warp_image_to_bird_view(img, camera_image_);

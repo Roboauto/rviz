@@ -139,7 +139,7 @@ protected:
     FloatProperty *alpha_property_;
     RosTopicProperty *camera_name_;
     EnumProperty * transport_property_;
-    TfFrameProperty *frame_property_;
+    //TfFrameProperty *frame_property_;
     TfFrameProperty *origin_frame_property_;
     BoolProperty* unreliable_property_;
     IntProperty* queue_size_property_;
@@ -149,6 +149,7 @@ protected:
 	
     // properties consts
     std::string ORIGIN_FRAME = "ground";
+    std::string CAMERA_FRAME = "camera";
 
     const float TEXTURE_ALPHA_MAX_ = 1.0f;
     const float TEXTURE_ALPHA_MIN_ = 0.0f;
