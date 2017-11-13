@@ -2,7 +2,7 @@
 // Created by robo on 10/26/17.
 //
 
-#include "Projection.h"
+#include "projection.h"
 
 void Projection::warp_image_to_bird_view(const cv::Mat& inputImage, cv::Mat& outputImage) {
 
@@ -10,7 +10,10 @@ void Projection::warp_image_to_bird_view(const cv::Mat& inputImage, cv::Mat& out
                         outputImage,
                         getWarpMatrix(),
                         cv::Size(xRange_ * pixelPerMeter_,
-                                 yRange_ * pixelPerMeter_));
+                                 yRange_ * pixelPerMeter_),
+                        cv::INTER_NEAREST,
+                        cv::BORDER_CONSTANT,
+                        0);
 }
 
 

@@ -17,11 +17,9 @@
 #endif  //  Q_MOC_RUN
 
 #include <QObject>
-#include <QtConcurrentRun>
 #include <QFuture>
 #include <QByteArray>
 #include <QFile>
-#include <QNetworkRequest>
 
 #include <memory>
 
@@ -33,8 +31,13 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+#include <image_transport/image_transport.h>
+#include <image_transport/subscriber_filter.h>
+
 #include <tf/transform_listener.h>
-#include "Projection.h"
+#include "tools/projection.h"
+
+#include "rviz/msg_sync.hh"
 
 namespace Ogre {
 class ManualObject;
@@ -44,9 +47,7 @@ namespace rviz {
 
 class FloatProperty;
 class IntProperty;
-class Property;
 class RosTopicProperty;
-class StringProperty;
 class TfFrameProperty;
 class EnumProperty;
 
@@ -77,6 +78,9 @@ protected Q_SLOTS:
     void updateCameraName();
     void updateCameraFrame();
     void updateOriginFrame();
+    void fillTransportOptionList(EnumProperty* property);
+    void updateTopic();
+    virtual void updateQueueSize();
 
 protected:
 
@@ -99,8 +103,14 @@ protected:
 
     void onNewCameraInfo(const sensor_msgs::CameraInfoConstPtr& msg);
 
+    void scanForTransportSubscriberPlugins();
+
     unsigned int map_id_;
     unsigned int scene_id_;
+
+    MsgSync<sensor_msgs::Image::ConstPtr> msg_sync_;
+
+    image_transport::ImageTransport *it_;
 
     /// Instance of a tile w/ associated ogre data
     struct MapObject {
@@ -111,14 +121,16 @@ protected:
 
     std::vector<MapObject> objects_;
 
-    ros::Subscriber image_sub_;
+    boost::shared_ptr<image_transport::SubscriberFilter> image_sub_;
     ros::Subscriber camera_info_sub_;
 
     cv::Mat camera_image_;
+
     sensor_msgs::CameraInfo camera_info_;
-    Projection *projectionTool;
+    Projection *projectionTool_;
     tf::TransformListener listener_;
     cv::Matx33f currentFrameToGroundRotMatrix_;
+    int messages_received_;
 
     //  properties
     IntProperty *length_in_meters_;
@@ -126,13 +138,18 @@ protected:
     IntProperty *pixels_per_meter_;
     FloatProperty *alpha_property_;
     RosTopicProperty *camera_name_;
-    TfFrameProperty *frame_property_;
+    EnumProperty * transport_property_;
+    //TfFrameProperty *frame_property_;
     TfFrameProperty *origin_frame_property_;
+    BoolProperty* unreliable_property_;
+    IntProperty* queue_size_property_;
 
+    std::set<std::string> transport_plugin_types_;
+
+	
     // properties consts
-
-
     std::string ORIGIN_FRAME = "ground";
+    std::string CAMERA_FRAME = "camera";
 
     const float TEXTURE_ALPHA_MAX_ = 1.0f;
     const float TEXTURE_ALPHA_MIN_ = 0.0f;
@@ -148,7 +165,9 @@ protected:
 
     const int TEXTURE_PIXEL_PER_METER_MAX_ = 100;
     const int TEXTURE_PIXEL_PER_METER_MIN_ = 2;
-    const int TEXTURE_PIXEL_PER_METER_INIT_ = 50;
+    const int TEXTURE_PIXEL_PER_METER_INIT_ = 20;
+
+    const int QUEUE_DEFAULT_SIZE = 100;
 
 
     float alpha_;

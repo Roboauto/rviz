@@ -44,6 +44,8 @@ public:
 
     void set_originFrame(const std::string origin_frame) { origin_frame_ = origin_frame; };
 
+    void set_cameraFrame(const std::string camera_frame) { camera_frame_ = camera_frame; };
+
 private:
 
     ros::NodeHandle node_;

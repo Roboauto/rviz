@@ -23,6 +23,14 @@
 
 #include <std_msgs/String.h>
 
+#include <boost/algorithm/string/erase.hpp>
+#include <boost/foreach.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include <image_transport/subscriber_plugin.h>
+
+#include <pluginlib/class_loader.h>
+
 #include "rviz/frame_manager.h"
 #include "rviz/ogre_helpers/grid.h"
 #include "rviz/properties/enum_property.h"
@@ -36,9 +44,8 @@
 #include "rviz/validate_floats.h"
 #include "rviz/display_context.h"
 
-#include "CameraToGround_Display.h"
+#include "camera_to_ground_display.h"
 
-#include "Projection.h"
 
 
 Ogre::TexturePtr textureFromImage(const QImage &image,
@@ -105,8 +112,10 @@ inline QImage  cvMatToQImage( const cv::Mat &inMat )
 namespace rviz {
 
     CameraToGround_Display::CameraToGround_Display() : Display(),
-                                           map_id_(0),
-                                           scene_id_(0) {
+                                                       image_sub_(),
+                                                       map_id_(0),
+                                                       scene_id_(0),
+                                                       msg_sync_(QUEUE_DEFAULT_SIZE){
 
         static unsigned int map_ids = 0;
         map_id_ = map_ids++; //  global counter of map ids
@@ -160,9 +169,16 @@ namespace rviz {
                                             this,
                                             SLOT(updateCameraName()) );
 
-        frame_property_ = new TfFrameProperty("Camera frame", "camera",
-                                              "tf frame of projected camera", this,
-                                              nullptr, false, SLOT(updateCameraFrame()), this);
+        transport_property_ = new EnumProperty("Transport Hint",
+                                          "raw",
+                                          "Preferred method of sending images.",
+                                          this,
+                                          SLOT( updateTopic() ));
+        connect(transport_property_, SIGNAL( requestOptions( EnumProperty* )), this, SLOT( fillTransportOptionList( EnumProperty* )));
+
+//        frame_property_ = new TfFrameProperty("Camera frame", "camera",
+//                                              "tf frame of projected camera", this,
+//                                              nullptr, false, SLOT(updateCameraFrame()), this);
 
         origin_frame_property_ = new TfFrameProperty("Origin frame",
                                                      "ground",
@@ -170,12 +186,29 @@ namespace rviz {
                                                      this,
                                                      nullptr, false, SLOT(updateOriginFrame()), this);
 
-        projectionTool = new Projection(update_nh_,
-                                        frame_property_->getStdString(),
-                                        origin_frame_property_->getStdString(),
-                                        texture_length_,
-                                        texture_width_,
-                                        texture_pixel_per_meter_);
+        unreliable_property_ = new BoolProperty( "Unreliable",
+                                                 false,
+                                                 "Prefer UDP topic transport",
+                                                 this,
+                                                 SLOT( updateTopic() ));
+
+        queue_size_property_ = new IntProperty( "Queue Size", QUEUE_DEFAULT_SIZE,
+                                                "Advanced: set the size of the incoming message queue.  Increasing this "
+                                                        "is useful if your incoming TF data is delayed significantly from your"
+                                                        " image data, but it can greatly increase memory usage if the messages are big.",
+                                                this, SLOT( updateQueueSize() ));
+        queue_size_property_->setMin( 1 );
+
+        projectionTool_ = new Projection(update_nh_,
+                                         CAMERA_FRAME,
+                                         origin_frame_property_->getStdString(),
+                                         texture_length_,
+                                         texture_width_,
+                                         texture_pixel_per_meter_);
+
+        it_ = new image_transport::ImageTransport(update_nh_);
+
+        messages_received_ = 0;
     }
 
     CameraToGround_Display::~CameraToGround_Display() {
@@ -187,8 +220,9 @@ namespace rviz {
 
     void CameraToGround_Display::onInitialize() {
 
-        frame_property_->setFrameManager(context_->getFrameManager());
+//        frame_property_->setFrameManager(context_->getFrameManager());
         origin_frame_property_->setFrameManager(context_->getFrameManager());
+        scanForTransportSubscriberPlugins();
         ROS_INFO("Initialization done");
     }
 
@@ -208,38 +242,78 @@ namespace rviz {
 
     void CameraToGround_Display::onNewImage(const sensor_msgs::ImageConstPtr& msg) {
 
-        cv::Mat img = cv::Mat(msg->height, msg->width, CV_8UC3, (char*)&*msg->data.begin() ).clone();
+        setStatus(StatusProperty::Ok, "Image", "Images received");
 
-        projectionTool->warp_image_to_bird_view(img, camera_image_);
+        msg_sync_.add(msg);
 
-        assembleScene();
+        messages_received_++;
+        setStatus(StatusProperty::Ok, "Image", QString::number(messages_received_) + " images received");
+
+        //assembleScene();
     }
 
 
     void CameraToGround_Display::onNewCameraInfo(const sensor_msgs::CameraInfoConstPtr& msg) {
         camera_info_ = *msg;
-        projectionTool->set_camera_info(*msg);
+        projectionTool_->set_camera_info(*msg);
     }
 
 
     void CameraToGround_Display::subscribe() {
+
         if (!isEnabled()) {
             return;
         }
 
-        image_sub_ = update_nh_.subscribe(camera_name_->getStdString(), 1, &CameraToGround_Display::onNewImage, this);
+        image_sub_.reset(new image_transport::SubscriberFilter());
+
+        try {
+            image_sub_.reset(new image_transport::SubscriberFilter());
+
+            if (!camera_name_->getTopicStd().empty() && !transport_property_->getStdString().empty() ) {
+                // Determine UDP vs TCP transport for user selection.
+                if (unreliable_property_->getBool()) {
+                    image_sub_->subscribe(*it_, camera_name_->getTopicStd(), 1,
+                                    image_transport::TransportHints(transport_property_->getStdString(), ros::TransportHints().unreliable()));
+                } else{
+                    image_sub_->subscribe(*it_, camera_name_->getTopicStd(), 1,
+                                    image_transport::TransportHints(transport_property_->getStdString()));
+                }
+
+                image_sub_->registerCallback(boost::bind(&CameraToGround_Display::onNewImage, this, _1));
+            }
+            setStatus(StatusProperty::Ok, "Topic", "OK");
+        }
+        catch (ros::Exception& e) {
+            setStatus(StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
+        }
+        catch (image_transport::Exception& e) {
+            setStatus( StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
+        }
+
+        setStatus(StatusProperty::Warn, "Image", "No Image received");
+        messages_received_ = 0;
+//        //image_sub_ = it_->subscribe(camera_name_->getStdString(), 1, &CameraToGround_Display::onNewImage, this);
+//        image_sub_->subscribe(*it_,
+//                              camera_name_->getTopicStd(),
+//                              1,
+//                              image_transport::TransportHints(transport_property_->getStdString(),
+//                                                              ros::TransportHints().unreliable()));
+
         QStringList query = camera_name_->getString().split("/");
         QString camera_info_string = "/";
         for (int i = 0 ; i < query.size()-1 ; i++) {
             camera_info_string.append(QString("%0/").arg(query[i]));
         }
         camera_info_string.append("camera_info");
-
         camera_info_sub_ = update_nh_.subscribe(camera_info_string.toStdString(), 1, &CameraToGround_Display::onNewCameraInfo, this);
+
+        ROS_INFO("Subscribing.");
     }
 
     void CameraToGround_Display::unsubscribe() {
-        image_sub_.shutdown();
+
+        image_sub_.reset(new image_transport::SubscriberFilter());
         camera_info_sub_.shutdown();
         ROS_INFO("Unsubscribing.");
     }
@@ -255,28 +329,28 @@ namespace rviz {
 
     void CameraToGround_Display::updateTextureLength() {
         texture_length_ = (length_in_meters_->getValue().toInt()/2)*2;
-        projectionTool->set_xRange(texture_length_);
+        projectionTool_->set_xRange(texture_length_);
     }
 
 
 
     void CameraToGround_Display::updateTextureWidth() {
         texture_width_ = width_in_meters_->getValue().toInt();
-        projectionTool->set_yRange(texture_width_);
+        projectionTool_->set_yRange(texture_width_);
     }
 
 
 
     void CameraToGround_Display::updatePixelPerMeter() {
         texture_pixel_per_meter_ = (pixels_per_meter_->getValue().toInt()/2)*2;
-        projectionTool->set_pixelPerMeter(texture_pixel_per_meter_);
+        projectionTool_->set_pixelPerMeter(texture_pixel_per_meter_);
     }
 
 
     void CameraToGround_Display::updateCameraName() {
-        delete projectionTool;
-        projectionTool = new Projection(update_nh_,
-                                        frame_property_->getStdString(),
+        delete projectionTool_;
+        projectionTool_ = new Projection(update_nh_,
+                                        CAMERA_FRAME,//frame_property_->getStdString(),
                                         origin_frame_property_->getStdString(),
                                         texture_length_,
                                         texture_width_,
@@ -285,21 +359,21 @@ namespace rviz {
 
 
 
-    void CameraToGround_Display::updateCameraFrame () {
-        delete projectionTool;
-        projectionTool = new Projection(update_nh_,
-                                        frame_property_->getStdString(),
-                                        origin_frame_property_->getStdString(),
-                                        texture_length_,
-                                        texture_width_,
-                                        texture_pixel_per_meter_);
-    }
+//    void CameraToGround_Display::updateCameraFrame () {
+//        delete projectionTool_;
+//        projectionTool_ = new Projection(update_nh_,
+//                                         CAMERA_FRAME,//frame_property_->getStdString(),
+//                                        origin_frame_property_->getStdString(),
+//                                        texture_length_,
+//                                        texture_width_,
+//                                        texture_pixel_per_meter_);
+//    }
 
 
     void CameraToGround_Display::updateOriginFrame () {
 
         ORIGIN_FRAME = origin_frame_property_->getStdString();
-        projectionTool->set_originFrame(ORIGIN_FRAME);
+        projectionTool_->set_originFrame(ORIGIN_FRAME);
     }
 
 
@@ -335,9 +409,39 @@ namespace rviz {
 
     void CameraToGround_Display::update(float, float) {
         //  creates all geometry, if necessary
-        //assembleScene();
+
+        sensor_msgs::ImageConstPtr image = nullptr;
+
+        if(!msg_sync_.empty()) {
+            if (context_->getFrameManager()->getSyncMode() != FrameManager::SyncMode::SyncOff) {
+                ros::Time rviz_time = context_->getFrameManager()->getTime();
+                image = msg_sync_.get_nearest(rviz_time);
+
+                if (context_->getFrameManager()->getSyncMode() == FrameManager::SyncExact &&
+                    rviz_time != image->header.stamp) {
+                    std::ostringstream s;
+                    s << "Time-syncing active and no image at timestamp " << rviz_time.toSec() << ".";
+                    setStatus(StatusProperty::Warn, "Time", s.str().c_str());
+                    return;
+                }
+
+
+            } else {
+                image = msg_sync_.getLast();
+            }
+
+            CAMERA_FRAME = image->header.frame_id;
+            projectionTool_->set_cameraFrame(CAMERA_FRAME);
+            if (image) {
+                cv::Mat img = cv::Mat(image->height, image->width, CV_8UC3, (char*)&*image->data.begin() ).clone();
+                projectionTool_->warp_image_to_bird_view(img, camera_image_);
+            }
+        }
+
+        assembleScene();
         //  draw
-        //context_->queueRender();
+        context_->queueRender();
+        //ROS_INFO("Rendering scene");
     }
 
 
@@ -530,6 +634,95 @@ namespace rviz {
 
     void CameraToGround_Display::reset() {
         Display::reset();
+//
+//        if (tf_filter_)
+//            tf_filter_->clear();
+    }
+
+
+    void CameraToGround_Display::updateTopic()
+    {
+        unsubscribe();
+        reset();
+        subscribe();
+        //context_->queueRender();
+    }
+
+
+    void CameraToGround_Display::updateQueueSize() {
+        msg_sync_.setSize((uint32_t) queue_size_property_->getInt());
+    }
+
+
+    void CameraToGround_Display::fillTransportOptionList(EnumProperty* property)
+    {
+        property->clearOptions();
+        std::vector<std::string> choices;
+        choices.push_back("raw");
+
+        // Loop over all current ROS topic names
+        ros::master::V_TopicInfo topics;
+        ros::master::getTopics(topics);
+        ros::master::V_TopicInfo::iterator it = topics.begin();
+        ros::master::V_TopicInfo::iterator end = topics.end();
+        for (; it != end; ++it)
+        {
+            // If the beginning of this topic name is the same as topic_,
+            // and the whole string is not the same,
+            // and the next character is /
+            // and there are no further slashes from there to the end,
+            // then consider this a possible transport topic.
+            const ros::master::TopicInfo& ti = *it;
+            const std::string& topic_name = ti.name;
+            const std::string& topic = camera_name_->getStdString();
+
+            if (topic_name.find(topic) == 0 && topic_name != topic && topic_name[topic.size()] == '/'
+                && topic_name.find('/', topic.size() + 1) == std::string::npos)
+            {
+                std::string transport_type = topic_name.substr(topic.size() + 1);
+
+                // If the transport type string found above is in the set of
+                // supported transport type plugins, add it to the list.
+                if (transport_plugin_types_.find(transport_type) != transport_plugin_types_.end())
+                {
+                    choices.push_back(transport_type);
+                }
+            }
+        }
+
+        for (size_t i = 0; i < choices.size(); i++)
+        {
+            property->addOptionStd(choices[i]);
+        }
+    }
+
+
+
+
+    void CameraToGround_Display::scanForTransportSubscriberPlugins()
+    {
+        pluginlib::ClassLoader<image_transport::SubscriberPlugin> sub_loader("image_transport",
+                                                                             "image_transport::SubscriberPlugin");
+
+        BOOST_FOREACH( const std::string& lookup_name, sub_loader.getDeclaredClasses() ) {
+            // lookup_name is formatted as "pkg/transport_sub", for instance
+            // "image_transport/compressed_sub" for the "compressed"
+            // transport.  This code removes the "_sub" from the tail and
+            // everything up to and including the "/" from the head, leaving
+            // "compressed" (for example) in transport_name.
+            std::string transport_name = boost::erase_last_copy(lookup_name, "_sub");
+            transport_name = transport_name.substr(lookup_name.find('/') + 1);
+
+            // If the plugin loads without throwing an exception, add its
+            // transport name to the list of valid plugins, otherwise ignore
+            // it.
+            try {
+                boost::shared_ptr<image_transport::SubscriberPlugin> sub = sub_loader.createInstance(lookup_name);
+                transport_plugin_types_.insert(transport_name);
+            }
+            catch (const pluginlib::LibraryLoadException& e) { }
+            catch (const pluginlib::CreateClassException& e) { }
+        }
     }
 
 } // namespace rviz
