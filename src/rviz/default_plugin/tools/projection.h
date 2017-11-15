@@ -18,6 +18,9 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <std_msgs/String.h>
 
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+
 class Projection {
 
 
@@ -30,7 +33,9 @@ public:
                                                                                       xRange_(xRange),
                                                                                       yRange_(yRange),
                                                                                       pixelPerMeter_(pixelPerMeter)
-    { };
+    {
+        //debug_pub_ = node.advertise<std_msgs::String>("debug", 1);
+    };
 
     void warp_image_to_bird_view(const cv::Mat& inputImage, cv::Mat& outputImage);
 
@@ -49,6 +54,8 @@ public:
 private:
 
     ros::NodeHandle node_;
+
+    //ros::Publisher debug_pub_;
 
     tf::TransformListener listener_;
 

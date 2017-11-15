@@ -3,6 +3,7 @@
 //
 
 #include "projection.h"
+#include <iostream>
 
 void Projection::warp_image_to_bird_view(const cv::Mat& inputImage, cv::Mat& outputImage) {
 
@@ -73,13 +74,19 @@ cv::Point3f Projection::get_camera_translation_vector() {
 
 cv::Matx33f Projection::get_camera_intrinsic_matrix() {
 
+    float binning_x = camera_info_.binning_x;
+    float binning_y = camera_info_.binning_y;
+
+    if (binning_x == 0) binning_x = 1.0;
+    if (binning_y == 0) binning_y = 1.0;
+
     cv::Matx33f camera_intrinsic_matrix( 3, 3, CV_32F );
-    camera_intrinsic_matrix(0,0) = (float)camera_info_.P[0] / camera_info_.binning_x;
+    camera_intrinsic_matrix(0,0) = (float)camera_info_.P[0] / binning_x;
     camera_intrinsic_matrix(0,1) = (float)camera_info_.P[1];
-    camera_intrinsic_matrix(0,2) = (float)(camera_info_.P[2] - camera_info_.roi.x_offset) / camera_info_.binning_x;
+    camera_intrinsic_matrix(0,2) = (float)(camera_info_.P[2] - camera_info_.roi.x_offset) / binning_x;
     camera_intrinsic_matrix(1,0) = (float)camera_info_.P[4];
-    camera_intrinsic_matrix(1,1) = (float)camera_info_.P[5] / camera_info_.binning_y;
-    camera_intrinsic_matrix(1,2) = (float)(camera_info_.P[6] - camera_info_.roi.y_offset) / camera_info_.binning_y;
+    camera_intrinsic_matrix(1,1) = (float)camera_info_.P[5] / binning_y;
+    camera_intrinsic_matrix(1,2) = (float)(camera_info_.P[6] - camera_info_.roi.y_offset) / binning_y;
     camera_intrinsic_matrix(2,0) = (float)camera_info_.P[8];
     camera_intrinsic_matrix(2,1) = (float)camera_info_.P[9];
     camera_intrinsic_matrix(2,2) = (float)camera_info_.P[10];
@@ -95,6 +102,7 @@ void Projection::get_camera_pts(cv::Point2f* camera_pts) {
 
     cv::Point3f camera_to_ground_translation = get_camera_translation_vector();
 
+
     cv::Point3f camera_rotated_3d_pts[4];
     for (int i = 0 ; i < 4 ; i++) {
         cv::Point3f rotated_point = get_camera_rotation_matrix() * ground_points_3d[i];
@@ -107,6 +115,7 @@ void Projection::get_camera_pts(cv::Point2f* camera_pts) {
         cv::Point3f rotated_point = get_camera_intrinsic_matrix() * camera_rotated_3d_pts[i];
         camera_pts[i] = cv::Point2f(rotated_point.x/rotated_point.z , rotated_point.y /rotated_point.z); // watch dev by 0
     }
+
 }
 
 cv::Mat Projection::getWarpMatrix() {

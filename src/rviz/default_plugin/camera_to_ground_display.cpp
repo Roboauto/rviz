@@ -435,6 +435,9 @@ namespace rviz {
             if (image) {
                 cv::Mat img = cv::Mat(image->height, image->width, CV_8UC3, (char*)&*image->data.begin() ).clone();
                 projectionTool_->warp_image_to_bird_view(img, camera_image_);
+                cv::imshow("projection", camera_image_);
+                cv::imshow("origin", img);
+                cv::waitKey(1);
             }
         }
 
