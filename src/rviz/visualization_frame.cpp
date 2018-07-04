@@ -48,6 +48,7 @@
 #include <QLabel>
 #include <QToolButton>
 #include <QHBoxLayout>
+#include <QTabBar>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -69,6 +70,8 @@
 #include "rviz/help_panel.h"
 #include "rviz/loading_dialog.h"
 #include "rviz/new_object_dialog.h"
+#include "rviz/preferences.h"
+#include "rviz/preferences_dialog.h"
 #include "rviz/panel_dock_widget.h"
 #include "rviz/panel_factory.h"
 #include "rviz/render_panel.h"
@@ -125,6 +128,7 @@ VisualizationFrame::VisualizationFrame( QWidget* parent )
   , loading_( false )
   , post_load_timer_( new QTimer( this ))
   , frame_count_(0)
+  , preferences_( new Preferences() )
 {
   panel_factory_ = new PanelFactory();
 
@@ -409,7 +413,7 @@ void VisualizationFrame::loadPersistentSettings()
       last_config_dir_ = last_config_dir.toStdString();
       last_image_dir_ = last_image_dir.toStdString();
     }
-    
+
     Config recent_configs_list = config.mapGetChild( "Recent Configs" );
     recent_configs_.clear();
     int num_recent = recent_configs_list.listLength();
@@ -463,6 +467,7 @@ void VisualizationFrame::initMenus()
     file_menu_->addAction( "Change &Master", this, SLOT( changeMaster() ));
   }
   file_menu_->addSeparator();
+  file_menu_->addAction( "&Preferences", this, SLOT( openPreferencesDialog() ), QKeySequence( "Ctrl+P" ));
 
   QAction * file_menu_quit_action = file_menu_->addAction( "&Quit", this, SLOT( close() ), QKeySequence( "Ctrl+Q" ));
   this->addAction(file_menu_quit_action);
@@ -583,6 +588,20 @@ void VisualizationFrame::onDockPanelVisibilityChange( bool visible )
 
 }
 
+void VisualizationFrame::openPreferencesDialog()
+{
+  Preferences temp_preferences( *preferences_.get() );
+  PreferencesDialog* dialog = new PreferencesDialog( panel_factory_,
+                                                 &temp_preferences,
+                                                 this );
+  manager_->stopUpdate();
+  if( dialog->exec() == QDialog::Accepted ) {
+    // Apply preferences.
+    preferences_ = boost::make_shared<Preferences>( temp_preferences );
+  }
+  manager_->startUpdate();
+}
+
 void VisualizationFrame::openNewPanelDialog()
 {
   QString class_id;
@@ -599,7 +618,11 @@ void VisualizationFrame::openNewPanelDialog()
   manager_->stopUpdate();
   if( dialog->exec() == QDialog::Accepted )
   {
-    addPanelByName( display_name, class_id );
+    QDockWidget *dock = addPanelByName( display_name, class_id );
+    if ( dock )
+    {
+      connect( dock, SIGNAL( dockLocationChanged( Qt::DockWidgetArea )), this, SLOT( onDockPanelChange() ) );
+    }
   }
   manager_->startUpdate();
 }
@@ -676,7 +699,7 @@ void VisualizationFrame::loadDisplayConfig( const QString& qpath )
   std::string actual_load_path = path;
   if( !fs::exists( path ) || fs::is_directory( path ) || fs::is_empty( path ))
   {
-    actual_load_path = (fs::path(package_path_) / "default.rviz").BOOST_FILE_STRING();      
+    actual_load_path = (fs::path(package_path_) / "default.rviz").BOOST_FILE_STRING();
     if( !fs::exists( actual_load_path ))
     {
       ROS_ERROR( "Default display config '%s' not found.  RViz will be very empty at first.", actual_load_path.c_str() );
@@ -785,6 +808,7 @@ void VisualizationFrame::save( Config config )
   manager_->save( config.mapMakeChild( "Visualization Manager" ));
   savePanels( config.mapMakeChild( "Panels" ));
   saveWindowGeometry( config.mapMakeChild( "Window Geometry" ));
+  savePreferences( config.mapMakeChild( "Preferences" ));
 }
 
 void VisualizationFrame::load( const Config& config )
@@ -792,6 +816,7 @@ void VisualizationFrame::load( const Config& config )
   manager_->load( config.mapGetChild( "Visualization Manager" ));
   loadPanels( config.mapGetChild( "Panels" ));
   loadWindowGeometry( config.mapGetChild( "Window Geometry" ));
+  loadPreferences( config.mapGetChild( "Preferences" ));
 }
 
 void VisualizationFrame::loadWindowGeometry( const Config& config )
@@ -808,7 +833,7 @@ void VisualizationFrame::loadWindowGeometry( const Config& config )
       config.mapGetInt( "Height", &height ))
   {
     resize( width, height );
-  }    
+  }
 
   QString main_window_config;
   if( config.mapGetString( "QMainWindow State", &main_window_config ))
@@ -886,6 +911,7 @@ void VisualizationFrame::loadPanels( const Config& config )
       // qobject_cast.
       if( dock )
       {
+        connect(dock, SIGNAL( dockLocationChanged( Qt::DockWidgetArea )), this, SLOT( onDockPanelChange() ) );
         Panel* panel = qobject_cast<Panel*>( dock->widget() );
         if( panel )
         {
@@ -894,6 +920,8 @@ void VisualizationFrame::loadPanels( const Config& config )
       }
     }
   }
+
+  onDockPanelChange();
 }
 
 void VisualizationFrame::savePanels( Config config )
@@ -906,6 +934,16 @@ void VisualizationFrame::savePanels( Config config )
   }
 }
 
+void VisualizationFrame::loadPreferences( const Config& config )
+{
+  config.mapGetBool( "PromptSaveOnExit", &(preferences_->prompt_save_on_exit) );
+}
+
+void VisualizationFrame::savePreferences( Config config )
+{
+  config.mapSetValue( "PromptSaveOnExit", preferences_->prompt_save_on_exit );
+}
+
 bool VisualizationFrame::prepareToExit()
 {
   if( !initialized_ )
@@ -915,7 +953,7 @@ bool VisualizationFrame::prepareToExit()
 
   savePersistentSettings();
 
-  if( isWindowModified() )
+  if( isWindowModified() && preferences_->prompt_save_on_exit )
   {
     QMessageBox box( this );
     box.setText( "There are unsaved changes." );
@@ -951,7 +989,7 @@ bool VisualizationFrame::prepareToExit()
         default:
           return false;
         }
-        
+
       }
     case QMessageBox::Discard:
       return true;
@@ -1193,6 +1231,15 @@ void VisualizationFrame::onHelpAbout()
   .arg(OGRE_VERSION_NAME);
 
   QMessageBox::about(QApplication::activeWindow(), "About", about_text);
+}
+
+void VisualizationFrame::onDockPanelChange()
+{
+  QList<QTabBar *> tab_bars = findChildren<QTabBar *>(QString(), Qt::FindDirectChildrenOnly);
+  for ( QList<QTabBar *>::iterator it = tab_bars.begin(); it != tab_bars.end(); it++ )
+  {
+    (*it)->setElideMode( Qt::ElideNone );
+  }
 }
 
 QWidget* VisualizationFrame::getParentWindow()

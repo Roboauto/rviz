@@ -34,6 +34,7 @@
 #include "rviz/properties/float_property.h"
 #include "rviz/properties/int_property.h"
 #include "rviz/validate_floats.h"
+#include "rviz/validate_quaternions.h"
 
 #include <OgreSceneManager.h>
 #include <OgreSceneNode.h>
@@ -253,15 +254,6 @@ bool validateFloats(const nav_msgs::Odometry& msg)
   return valid;
 }
 
-bool validateQuaternion(const nav_msgs::Odometry& msg)
-{
-  bool valid = std::abs((msg.pose.pose.orientation.x * msg.pose.pose.orientation.x
-                       + msg.pose.pose.orientation.y * msg.pose.pose.orientation.y
-                       + msg.pose.pose.orientation.z * msg.pose.pose.orientation.z
-                       + msg.pose.pose.orientation.w * msg.pose.pose.orientation.w) - 1.0f) < 10e-3;
-  return valid;
-}
-
 void OdometryDisplay::processMessage( const nav_msgs::Odometry::ConstPtr& message )
 {
   typedef CovarianceProperty::CovarianceVisualPtr CovarianceVisualPtr;
@@ -272,10 +264,14 @@ void OdometryDisplay::processMessage( const nav_msgs::Odometry::ConstPtr& messag
     return;
   }
 
-  if( !validateQuaternion( *message ))
+  if( !validateQuaternions( message->pose.pose ))
   {
-    setStatus( StatusProperty::Error, "Topic", "Message contained unnormalized quaternion (squares of values don't add to 1)");
-    return;
+    ROS_WARN_ONCE_NAMED( "quaternions", "Odometry '%s' contains unnormalized quaternions. "
+                         "This warning will only be output once but may be true for others; "
+                         "enable DEBUG messages for ros.rviz.quaternions to see more details.",
+                         qPrintable( getName() ) );
+    ROS_DEBUG_NAMED( "quaternions", "Odometry '%s' contains unnormalized quaternions.", 
+                     qPrintable( getName() ) );
   }
 
   if( last_used_message_ )
@@ -378,5 +374,5 @@ void OdometryDisplay::reset()
 
 } // namespace rviz
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( rviz::OdometryDisplay, rviz::Display )

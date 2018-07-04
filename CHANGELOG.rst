@@ -2,6 +2,53 @@
 Changelog for package rviz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.13.1 (2018-05-10)
+-------------------
+* Added API option to disable keyboard focus being set on mouse move (`#1174 <https://github.com/ros-visualization/rviz/issues/1174>`_)
+* Deprecated tf API's in favor of new tf2 API alternatives (`#1236 <https://github.com/ros-visualization/rviz/issues/1236>`_)
+* Added a boolean property to the wrench visualization to make hiding small forces/torques optional (`#1196 <https://github.com/ros-visualization/rviz/issues/1196>`_)
+* Converted all of rviz to tinyxml2 from tinyxml, partially to avoid newly deprecated interfaces in urdf (`#1237 <https://github.com/ros-visualization/rviz/issues/1237>`_)
+* Added TF Prefix to effort plugin (`#1213 <https://github.com/ros-visualization/rviz/issues/1213>`_)
+* Contributors: Antoine Hoarau, Simon Schmeisser, William Woodall, jgueldenstein
+
+1.13.0 (2018-04-27)
+-------------------
+* Created a new Preferences window, and added PromptSaveOnExit option (`#1216 <https://github.com/ros-visualization/rviz/issues/1216>`_)
+* Allowed classes inheriting from image display access to more state (`#1221 <https://github.com/ros-visualization/rviz/issues/1221>`_)
+* Updated additional include statement to use new pluginlib and class_loader headers (`#1231 <https://github.com/ros-visualization/rviz/issues/1231>`_)
+* Fixed crash when robot model not loaded before processing JointState msg (`#1229 <https://github.com/ros-visualization/rviz/issues/1229>`_)
+* Contributors: William Woodall, dhood, daiz, ahoarau, MasterEric
+
+1.12.16 (2018-04-26)
+--------------------
+* Fixed use of LineSpacing, horizontal alignment and AABB calculation in MovableText (`#1200 <https://github.com/ros-visualization/rviz/issues/1200>`_)
+* Disable dock widget text eliding (`#1168 <https://github.com/ros-visualization/rviz/issues/1168>`_)
+* Updated include statements to use new pluginlib and class_loader headers (`#1217 <https://github.com/ros-visualization/rviz/issues/1217>`_)
+* Updated camera_display plugin to take roi in cameraInfo into consideration (`#1158 <https://github.com/ros-visualization/rviz/issues/1158>`_)
+* Fixed bug where help.html wasn't being installed (`#1218 <https://github.com/ros-visualization/rviz/issues/1218>`_)
+* Fixed compiler warning due to mismached new/delete in MapDisplay Swatch (`#1211 <https://github.com/ros-visualization/rviz/issues/1211>`_)
+* Factored out marker creation from ROS msg into new createMarker() (`#1183 <https://github.com/ros-visualization/rviz/issues/1183>`_)
+* Fixed crash if display-config parameter was fewer than 4 characters (`#1189 <https://github.com/ros-visualization/rviz/issues/1189>`_)
+* Contributors: Daniel Seifert, Johannes Meyer, Mikael Arguedas, Robert Haschke, Tomáš Černík, Victor Lamoine, dhood, ecazaubon
+
+1.12.15 (2018-01-05)
+--------------------
+* Fixed Ogre crashes from invalid quaternions by normalizing them so they no longer need to be rejected. (`#1179 <https://github.com/ros-visualization/rviz/issues/1179>`_)
+* Restored processing of ROS messages containing invalid quaternions. (`#1182 <https://github.com/ros-visualization/rviz/issues/1182>`_)
+  Unnormalized quaternions in messages will generate warnings; previously they were rejected.
+  Publishers of invalid quaternions should be updated to publish valid quaternions, as rviz will reject invalid quaternions in the future.
+* Contributors: Robert Haschke, dhood
+
+1.12.14 (2017-12-19)
+--------------------
+* Added global option to disable default light (`#1146 <https://github.com/ros-visualization/rviz/issues/1146>`_)
+* Added more checks for invalid quaternion normalization before displaying (`#1167 <https://github.com/ros-visualization/rviz/issues/1167>`_)
+* Added MONO8 transformer for point cloud plugin (`#1145 <https://github.com/ros-visualization/rviz/issues/1145>`_)
+* Fixed crash when unchecking options of "triangle list" markers `#1163 <https://github.com/ros-visualization/rviz/issues/1163>`_ (`#1164 <https://github.com/ros-visualization/rviz/issues/1164>`_)
+* Added CMake definition to prevent collision of "check" macro on OS X (`#1165 <https://github.com/ros-visualization/rviz/issues/1165>`_)
+* Added copyright notice for icons and graphics (`#1155 <https://github.com/ros-visualization/rviz/issues/1155>`_)
+* Contributors: David Gossow, Kentaro Wada, Lucas Walter, Mike Purvis, Stefan Fabian, Terry Welsh
+
 1.12.13 (2017-08-21)
 --------------------
 * Fixed an issue which caused mesh markers to appear white where previously they were not (`#1132 <https://github.com/ros-visualization/rviz/issues/1132>`_)

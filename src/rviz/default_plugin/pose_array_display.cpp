@@ -37,6 +37,7 @@
 #include "rviz/properties/color_property.h"
 #include "rviz/properties/float_property.h"
 #include "rviz/validate_floats.h"
+#include "rviz/validate_quaternions.h"
 #include "rviz/ogre_helpers/arrow.h"
 #include "rviz/ogre_helpers/axes.h"
 
@@ -64,7 +65,9 @@ namespace
 
   Ogre::Quaternion quaternionRosToOgre( geometry_msgs::Quaternion const & quaternion )
   {
-    return Ogre::Quaternion( quaternion.w, quaternion.x, quaternion.y, quaternion.z );
+    Ogre::Quaternion q;
+    normalizeQuaternion( quaternion, q );
+    return q;
   }
 }
 
@@ -139,6 +142,16 @@ void PoseArrayDisplay::processMessage( const geometry_msgs::PoseArray::ConstPtr&
     setStatus( StatusProperty::Error, "Topic",
                "Message contained invalid floating point values (nans or infs)" );
     return;
+  }
+
+  if( !validateQuaternions( msg->poses ))
+  {
+    ROS_WARN_ONCE_NAMED( "quaternions", "PoseArray msg received on topic '%s' contains unnormalized quaternions. "
+                         "This warning will only be output once but may be true for others; "
+                         "enable DEBUG messages for ros.rviz.quaternions to see more details.",
+                         topic_property_->getTopicStd().c_str() );
+    ROS_DEBUG_NAMED( "quaternions", "PoseArray msg received on topic '%s' contains unnormalized quaternions.", 
+                     topic_property_->getTopicStd().c_str() );
   }
 
   if( !setTransform( msg->header ) )
@@ -373,5 +386,5 @@ void PoseArrayDisplay::updateAxesGeometry()
 
 } // namespace rviz
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( rviz::PoseArrayDisplay, rviz::Display )

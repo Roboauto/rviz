@@ -44,6 +44,7 @@
 #include "rviz/properties/vector_property.h"
 #include "rviz/selection/selection_manager.h"
 #include "rviz/validate_floats.h"
+#include "rviz/validate_quaternions.h"
 
 #include "pose_with_covariance_display.h"
 #include "covariance_visual.h"
@@ -305,6 +306,16 @@ void PoseWithCovarianceDisplay::processMessage( const geometry_msgs::PoseWithCov
     return;
   }
 
+  if( !validateQuaternions( message->pose.pose ))
+  {
+    ROS_WARN_ONCE_NAMED( "quaternions", "PoseWithCovariance '%s' contains unnormalized quaternions. "
+                         "This warning will only be output once but may be true for others; "
+                         "enable DEBUG messages for ros.rviz.quaternions to see more details.",
+                         qPrintable( getName() ) );
+    ROS_DEBUG_NAMED( "quaternions", "PoseWithCovariance '%s' contains unnormalized quaternions.", 
+                     qPrintable( getName() ) );
+  }
+
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
   if( !context_->getFrameManager()->transform( message->header, message->pose.pose, position, orientation ))
@@ -341,5 +352,5 @@ void PoseWithCovarianceDisplay::reset()
 
 } // namespace rviz
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( rviz::PoseWithCovarianceDisplay, rviz::Display )

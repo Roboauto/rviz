@@ -159,7 +159,7 @@ else()
   set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 endif()
 
-find_package(TinyXML REQUIRED)
+find_package(TinyXML2 REQUIRED)
 
 catkin_python_setup()
 
@@ -213,7 +213,7 @@ include_directories(SYSTEM
   ${OGRE_OV_INCLUDE_DIRS}
   ${OPENGL_INCLUDE_DIR}
   ${PYTHON_INCLUDE_PATH}
-  ${TinyXML_INCLUDE_DIRS}
+  ${TinyXML2_INCLUDE_DIRS}
   ${urdfdom_headers_INCLUDE_DIRS}
 )
 include_directories(src ${catkin_INCLUDE_DIRS})
@@ -241,4 +241,7 @@ install(FILES default.rviz
 )
 install(FILES plugin_description.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+install(FILES help/help.html
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/help
 )

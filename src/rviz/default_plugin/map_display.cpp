@@ -39,8 +39,6 @@
 
 #include <ros/ros.h>
 
-#include <tf/transform_listener.h>
-
 #include "rviz/frame_manager.h"
 #include "rviz/ogre_helpers/custom_parameter_indices.h"
 #include "rviz/ogre_helpers/grid.h"
@@ -52,6 +50,7 @@
 #include "rviz/properties/ros_topic_property.h"
 #include "rviz/properties/vector_property.h"
 #include "rviz/validate_floats.h"
+#include "rviz/validate_quaternions.h"
 #include "rviz/display_context.h"
 
 #include "map_display.h"
@@ -209,7 +208,7 @@ void Swatch::updateData()
                                                                  pixel_stream, width_, height_, Ogre::PF_L8, Ogre::TEX_TYPE_2D,
                                                                  0);
 
-  delete pixels;
+  delete[] pixels;
 }
 
 
@@ -655,6 +654,16 @@ void MapDisplay::showMap()
     return;
   }
 
+  if( !validateQuaternions( current_map_.info.origin ))
+  {
+    ROS_WARN_ONCE_NAMED( "quaternions", "Map received on topic '%s' contains unnormalized quaternions. "
+                         "This warning will only be output once but may be true for others; "
+                         "enable DEBUG messages for ros.rviz.quaternions to see more details.",
+                         topic_property_->getTopicStd().c_str() );
+    ROS_DEBUG_NAMED( "quaternions", "Map received on topic '%s' contains unnormalized quaternions.", 
+                     topic_property_->getTopicStd().c_str() );
+  }
+
   if( current_map_.info.width * current_map_.info.height == 0 )
   {
     std::stringstream ss;
@@ -685,10 +694,9 @@ void MapDisplay::showMap()
   Ogre::Vector3 position( current_map_.info.origin.position.x,
                           current_map_.info.origin.position.y,
                           current_map_.info.origin.position.z );
-  Ogre::Quaternion orientation( current_map_.info.origin.orientation.w,
-                                current_map_.info.origin.orientation.x,
-                                current_map_.info.origin.orientation.y,
-                                current_map_.info.origin.orientation.z );
+  Ogre::Quaternion orientation;
+  normalizeQuaternion( current_map_.info.origin.orientation, orientation );
+
   frame_ = current_map_.header.frame_id;
   if (frame_.empty())
   {
@@ -823,5 +831,5 @@ void MapDisplay::update( float wall_dt, float ros_dt ) {
 
 } // namespace rviz
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( rviz::MapDisplay, rviz::Display )
