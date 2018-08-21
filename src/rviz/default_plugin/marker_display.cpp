@@ -52,13 +52,20 @@
 
 #include "rviz/default_plugin/marker_display.h"
 
+#include "rviz/default_plugin/Mqtt/MQTTSubscriber.h"
+
+
 namespace rviz
 {
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 MarkerDisplay::MarkerDisplay()
   : Display()
+  , _subscriber("rviz")
+  , _array_subscriber("rviz")
 {
   marker_topic_property_ = new RosTopicProperty( "Marker Topic", "visualization_marker",
                                                  QString::fromStdString( ros::message_traits::datatype<visualization_msgs::Marker>() ),
@@ -74,6 +81,7 @@ MarkerDisplay::MarkerDisplay()
   queue_size_property_->setMin( 0 );
 
   namespaces_category_ = new Property( "Namespaces", QVariant(), "", this );
+
 }
 
 void MarkerDisplay::onInitialize()
@@ -88,6 +96,87 @@ void MarkerDisplay::onInitialize()
   tf_filter_->registerFailureCallback(boost::bind(&MarkerDisplay::failedMarker, this, _1, _2));
 
   namespace_config_enabled_state_.clear();
+
+  _subscriber.connect("host_url");
+  _array_subscriber.connect("host_url");
+
+  _subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
+  _array_subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
+
+}
+
+void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<MarkerArrayMsg> & message_array) {
+  for( auto message : message_array->markers){
+    incomingMqttMessage_(message);
+  }
+}
+
+void MarkerDisplay::incomingMqttMessage( std::shared_ptr<MarkerMsg> & message_ptr){
+  incomingMqttMessage_(*message_ptr);
+}
+
+void MarkerDisplay::incomingMqttMessage_(const MarkerMsg & message) {
+
+  visualization_msgs::Marker marker;
+
+    // header
+  marker.header.frame_id = message.frame_id;
+  marker.header.seq = message.sequence_id;
+  marker.header.stamp = ros::Time(message.time_stamp);
+    // ns
+  marker.ns = message.name_space;
+    // id
+  marker.id = message.id;
+    // type
+  marker.type = message.type;
+    // action
+  marker.action = message.action;
+    //  pose
+  marker.pose.position.x = message.position[0];
+  marker.pose.position.y = message.position[1];
+  marker.pose.position.z = message.position[2];
+  marker.pose.orientation.w = message.orientation[0];
+  marker.pose.orientation.x = message.orientation[1];
+  marker.pose.orientation.y = message.orientation[2];
+  marker.pose.orientation.z = message.orientation[3];
+    //  scale
+  marker.scale.x = message.scale[0];
+  marker.scale.y = message.scale[1];
+  marker.scale.z = message.scale[2];
+    // color
+  marker.color.r = message.color[0];
+  marker.color.g = message.color[1];
+  marker.color.b = message.color[2];
+  marker.color.a = message.color[3];
+    //  lifetime
+  marker.lifetime = ros::Duration(message.lifetime);
+    // frame_locked
+  marker.frame_locked = message.frame_locked;
+    // points
+  for (auto point : message.points){
+    geometry_msgs::Point pt;
+    pt.x = point[0];
+    pt.y = point[1];
+    pt.z = point[2];
+    marker.points.push_back(pt);
+  }
+    // colors
+  for (auto color :  message.colors) {
+    std_msgs::ColorRGBA next_color;
+    next_color.r = color[0];
+    next_color.g = color[1];
+    next_color.b = color[2];
+    next_color.a = color[3];
+    marker.colors.push_back(next_color);
+  }
+    // text
+  marker.text = message.text;
+    // mesh_resource
+  marker.mesh_resource = message.mesh_resource;
+    //mesh_use_embedded_materials
+  marker.mesh_use_embedded_materials = message.mesh_use_embedded_materials;
+
+  tf_filter_->add(visualization_msgs::Marker::Ptr(new visualization_msgs::Marker(marker)));
 }
 
 MarkerDisplay::~MarkerDisplay()
@@ -95,7 +184,6 @@ MarkerDisplay::~MarkerDisplay()
   if ( initialized() )
   {
     unsubscribe();
-
     clearMarkers();
 
     delete tf_filter_;
@@ -161,11 +249,16 @@ void MarkerDisplay::subscribe()
   {
     array_sub_.shutdown();
     sub_.unsubscribe();
-
+    _subscriber.unsubscribe();
+    _array_subscriber.unsubscribe();
     try
     {
       sub_.subscribe( update_nh_, marker_topic, queue_size_property_->getInt() );
       array_sub_ = update_nh_.subscribe( marker_topic + "_array", queue_size_property_->getInt(), &MarkerDisplay::incomingMarkerArray, this );
+
+      _subscriber.subscribe(marker_topic, MQTT::QOS::AT_LEAST_ONCE);
+      _array_subscriber.subscribe(marker_topic + "_array", MQTT::QOS::AT_LEAST_ONCE);
+
       setStatus( StatusProperty::Ok, "Topic", "OK" );
     }
     catch( ros::Exception& e )
@@ -179,6 +272,8 @@ void MarkerDisplay::unsubscribe()
 {
   sub_.unsubscribe();
   array_sub_.shutdown();
+  _subscriber.unsubscribe();
+  _array_subscriber.unsubscribe();
 }
 
 void MarkerDisplay::deleteMarker(MarkerID id)
