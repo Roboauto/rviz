@@ -5,9 +5,14 @@
 #ifndef RVIZ_MARKERMESSAGE_H
 #define RVIZ_MARKERMESSAGE_H
 
+
+#include <msgpack.hpp>
+
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <array>
+
 
 struct MarkerMsg {
   uint32_t sequence_id;

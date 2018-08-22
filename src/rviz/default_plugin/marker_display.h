@@ -42,7 +42,8 @@
 #endif
 
 #include "rviz/default_plugin/Mqtt/MQTTSubscriber.h"
-#include "rviz/default_plugin/MsgPack/MarkerMessage.h
+
+#include "rviz/default_plugin/MsgPack/MarkerMessage.h"
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>

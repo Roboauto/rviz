@@ -55,6 +55,7 @@
 #include "rviz/default_plugin/Mqtt/MQTTSubscriber.h"
 
 
+
 namespace rviz
 {
 
@@ -64,8 +65,8 @@ namespace rviz
 
 MarkerDisplay::MarkerDisplay()
   : Display()
-  , _subscriber("rviz")
-  , _array_subscriber("rviz")
+  , _subscriber("rviz_marker")
+  , _array_subscriber("rviz_marker_array")
 {
   marker_topic_property_ = new RosTopicProperty( "Marker Topic", "visualization_marker",
                                                  QString::fromStdString( ros::message_traits::datatype<visualization_msgs::Marker>() ),
