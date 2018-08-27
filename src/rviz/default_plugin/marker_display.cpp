@@ -98,8 +98,8 @@ void MarkerDisplay::onInitialize()
 
   namespace_config_enabled_state_.clear();
 
-  _subscriber.connect("host_url");
-  _array_subscriber.connect("host_url");
+  _subscriber.connect("127.0.0.1");
+  _array_subscriber.connect("127.0.0.1");
 
   _subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
   _array_subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
