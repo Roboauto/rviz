@@ -66,7 +66,7 @@ set(SOURCE_FILES
   view_controllers/fps_view_controller.cpp
   wrench_display.cpp
   wrench_visual.cpp
-  MsgPack/MarkerMessage.h)
+  MsgPack/MarkerMessage.h MsgPack/Types.h)
 
 add_library(${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME} ${SOURCE_FILES})
 if(NOT WIN32)
@@ -79,6 +79,8 @@ target_link_libraries(${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME}
   ${catkin_LIBRARIES}
   ${OGRE_OV_LIBRARIES_ABS}
   ${QT_LIBRARIES}
+  libmsgpackc.a
+  mosquittopp.so
 )
 
 install(TARGETS ${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME}

@@ -60,7 +60,8 @@ namespace rviz
 {
 
 
-
+static const std::string k_stepan_ip = "10.136.59.61";
+static const std::string k_home = "127.0.0.1";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 MarkerDisplay::MarkerDisplay()
@@ -98,31 +99,33 @@ void MarkerDisplay::onInitialize()
 
   namespace_config_enabled_state_.clear();
 
-  _subscriber.connect("127.0.0.1");
-  _array_subscriber.connect("127.0.0.1");
+  _subscriber.connect(k_stepan_ip);
+  _array_subscriber.connect(k_stepan_ip);
 
   _subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
   _array_subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
 
 }
 
-void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<MarkerArrayMsg> & message_array) {
+void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<RoboCore::Visualizer::MarkerArrayMsg> & message_array) {
   for( auto message : message_array->markers){
     incomingMqttMessage_(message);
   }
 }
 
-void MarkerDisplay::incomingMqttMessage( std::shared_ptr<MarkerMsg> & message_ptr){
+void MarkerDisplay::incomingMqttMessage( std::shared_ptr<RoboCore::Visualizer::MarkerMsg> & message_ptr){
   incomingMqttMessage_(*message_ptr);
 }
 
-void MarkerDisplay::incomingMqttMessage_(const MarkerMsg & message) {
+void MarkerDisplay::incomingMqttMessage_(const RoboCore::Visualizer::MarkerMsg & message) {
 
   visualization_msgs::Marker marker;
 
+
     // header
-  marker.header.frame_id = message.frame_id;
   marker.header.seq = message.sequence_id;
+  marker.header.frame_id = message.frame_id;
+
   marker.header.stamp = ros::Time(message.time_stamp);
     // ns
   marker.ns = message.name_space;
@@ -133,22 +136,22 @@ void MarkerDisplay::incomingMqttMessage_(const MarkerMsg & message) {
     // action
   marker.action = message.action;
     //  pose
-  marker.pose.position.x = message.position[0];
-  marker.pose.position.y = message.position[1];
-  marker.pose.position.z = message.position[2];
-  marker.pose.orientation.w = message.orientation[0];
-  marker.pose.orientation.x = message.orientation[1];
-  marker.pose.orientation.y = message.orientation[2];
-  marker.pose.orientation.z = message.orientation[3];
+  marker.pose.position.x = message.position.x;
+  marker.pose.position.y = message.position.y;
+  marker.pose.position.z = message.position.z;
+  marker.pose.orientation.w = message.orientation.w;
+  marker.pose.orientation.x = message.orientation.x;
+  marker.pose.orientation.y = message.orientation.y;
+  marker.pose.orientation.z = message.orientation.z;
     //  scale
-  marker.scale.x = message.scale[0];
-  marker.scale.y = message.scale[1];
-  marker.scale.z = message.scale[2];
+  marker.scale.x = message.scale.x;
+  marker.scale.y = message.scale.y;
+  marker.scale.z = message.scale.z;
     // color
-  marker.color.r = message.color[0];
-  marker.color.g = message.color[1];
-  marker.color.b = message.color[2];
-  marker.color.a = message.color[3];
+  marker.color.r = message.color.r;
+  marker.color.g = message.color.g;
+  marker.color.b = message.color.b;
+  marker.color.a = message.color.a;
     //  lifetime
   marker.lifetime = ros::Duration(message.lifetime);
     // frame_locked
@@ -156,18 +159,18 @@ void MarkerDisplay::incomingMqttMessage_(const MarkerMsg & message) {
     // points
   for (auto point : message.points){
     geometry_msgs::Point pt;
-    pt.x = point[0];
-    pt.y = point[1];
-    pt.z = point[2];
+    pt.x = point.x;
+    pt.y = point.y;
+    pt.z = point.z;
     marker.points.push_back(pt);
   }
     // colors
   for (auto color :  message.colors) {
     std_msgs::ColorRGBA next_color;
-    next_color.r = color[0];
-    next_color.g = color[1];
-    next_color.b = color[2];
-    next_color.a = color[3];
+    next_color.r = color.r;
+    next_color.g = color.g;
+    next_color.b = color.b;
+    next_color.a = color.a;
     marker.colors.push_back(next_color);
   }
     // text

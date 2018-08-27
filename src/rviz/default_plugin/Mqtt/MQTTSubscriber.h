@@ -24,10 +24,11 @@ namespace MQTT {
         : mosquittopp(clientId.c_str())
         , _clientId(clientId)
         , _topic() {
-
+        loop_start();
       }
 
-      void subscribe(const std::string &topic, MQTT::QOS qos) {
+      subscribe(const std::string &topic, MQTT::QOS qos) {
+
         mosquittopp::unsubscribe(nullptr, _topic.c_str());
         _topic = topic;
         mosquittopp::subscribe(nullptr, _topic.c_str(), qos);
