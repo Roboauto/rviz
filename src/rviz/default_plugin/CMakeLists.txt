@@ -66,7 +66,30 @@ set(SOURCE_FILES
   view_controllers/fps_view_controller.cpp
   wrench_display.cpp
   wrench_visual.cpp
-  MsgPack/MarkerMessage.h MsgPack/Types.h)
+  MsgPack/MarkerMessage.h
+  MsgPack/Types.h)
+
+
+
+#CONAN config
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+          "${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+string(REPLACE "." ";" VERSION_LIST ${CMAKE_CXX_COMPILER_VERSION})
+list(GET VERSION_LIST 0 COMPILER_VERSION_MAJOR)
+
+conan_cmake_install(CONANFILE . BUILD missing PROFILE ./conan_profiles/${CMAKE_CXX_COMPILER_ID}-${COMPILER_VERSION_MAJOR})
+
+include(./conanbuildinfo.cmake)
+
+conan_basic_setup(TARGETS)
+
+
 
 add_library(${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME} ${SOURCE_FILES})
 if(NOT WIN32)
@@ -79,8 +102,8 @@ target_link_libraries(${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME}
   ${catkin_LIBRARIES}
   ${OGRE_OV_LIBRARIES_ABS}
   ${QT_LIBRARIES}
-  libmsgpackc.a
-  mosquittopp.so
+    CONAN_PKG::msgpack
+    CONAN_PKG::mosquitto
 )
 
 install(TARGETS ${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME}
