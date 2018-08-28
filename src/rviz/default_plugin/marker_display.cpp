@@ -99,25 +99,25 @@ void MarkerDisplay::onInitialize()
 
   namespace_config_enabled_state_.clear();
 
-  _subscriber.connect(k_stepan_ip);
-  _array_subscriber.connect(k_stepan_ip);
+  _subscriber.connect(k_stepan_ip.data());
+  _array_subscriber.connect(k_stepan_ip.data());
 
   _subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
   _array_subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
 
 }
 
-void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<RoboCore::Visualizer::MarkerArrayMsg> & message_array) {
+void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<RoboCore::MarkerArrayMsg> & message_array) {
   for( auto message : message_array->markers){
     incomingMqttMessage_(message);
   }
 }
 
-void MarkerDisplay::incomingMqttMessage( std::shared_ptr<RoboCore::Visualizer::MarkerMsg> & message_ptr){
+void MarkerDisplay::incomingMqttMessage( std::shared_ptr<RoboCore::MarkerMsg> & message_ptr){
   incomingMqttMessage_(*message_ptr);
 }
 
-void MarkerDisplay::incomingMqttMessage_(const RoboCore::Visualizer::MarkerMsg & message) {
+void MarkerDisplay::incomingMqttMessage_(const RoboCore::MarkerMsg & message) {
 
   visualization_msgs::Marker marker;
 

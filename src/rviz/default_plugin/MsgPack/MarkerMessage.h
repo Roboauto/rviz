@@ -6,12 +6,6 @@
 #define RVIZ_MARKERMESSAGE_H
 
 
-
-
-
-
-
-
 #include <msgpack.hpp>
 
 #include <vector>
@@ -19,10 +13,10 @@
 #include <cstdint>
 #include <array>
 
-#include <Types.h>
+#include "Types.h"
 
 
-namespace RoboCore::Visualizer {
+namespace RoboCore {
   enum MarkerType {
     ARROW = 0,
     CUBE,

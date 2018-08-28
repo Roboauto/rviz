@@ -6,13 +6,11 @@
 
 #include "MQTTBase.h"
 
-#include "MQTTBase.h"
-#include <mosquittopp.h>
-#include <msgpack/v2/unpack.hpp>
-#include <msgpack.hpp>
-
 #include <string>
 #include <functional>
+
+#include <mosquittopp.h>
+#include <msgpack.hpp>
 
 namespace MQTT {
 
@@ -27,7 +25,7 @@ namespace MQTT {
         loop_start();
       }
 
-      subscribe(const std::string &topic, MQTT::QOS qos) {
+      void subscribe(const std::string &topic, MQTT::QOS qos) {
 
         mosquittopp::unsubscribe(nullptr, _topic.c_str());
         _topic = topic;

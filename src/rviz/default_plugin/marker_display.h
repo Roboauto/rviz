@@ -52,8 +52,6 @@
 #include "rviz/properties/bool_property.h"
 #include "rviz/selection/forwards.h"
 
-
-
 namespace rviz
 {
 class IntProperty;
@@ -181,13 +179,13 @@ private:
 
 //MY MODIFICATIONS
 
-  void incomingMqttMessage(std::shared_ptr<MarkerMsg> & message_ptr);
-  void incomingMqttArrayMessage(std::shared_ptr<MarkerArrayMsg> & message_array_ptr);
+  void incomingMqttMessage(std::shared_ptr<RoboCore::MarkerMsg> & message_ptr);
+  void incomingMqttArrayMessage(std::shared_ptr<RoboCore::MarkerArrayMsg> & message_array_ptr);
 
-  void incomingMqttMessage_(const MarkerMsg & message);
+  void incomingMqttMessage_(const RoboCore::MarkerMsg & message);
 
-  MQTT::MQTTSubscriber<MarkerMsg> _subscriber;
-  MQTT::MQTTSubscriber<MarkerArrayMsg> _array_subscriber;
+  MQTT::MQTTSubscriber<RoboCore::MarkerMsg> _subscriber;
+  MQTT::MQTTSubscriber<RoboCore::MarkerArrayMsg> _array_subscriber;
 };
 
 /** @brief Manager of a single marker namespace.  Keeps a hash from

@@ -6,7 +6,7 @@
 
 #include <msgpack.hpp>
 
-namespace RoboCore::Visualizer{
+namespace RoboCore{
     struct PoseXYZ{
         float x, y, z;
 
@@ -39,7 +39,7 @@ namespace RoboCore::Visualizer{
 
     struct Properties{
     public:
-        Properties(Color color, Scale scale, std::string frame, Orientation orientation={0,0,0,1}) :
+        Properties(Color color, Scale scale, std::string frame, Orientation orientation=Orientation()) :
                 color_(color),
                 scale_(scale),
                 orientation_(orientation),
@@ -54,19 +54,3 @@ namespace RoboCore::Visualizer{
         std::string frame_;
     };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif //RVIZ_TYPES_H

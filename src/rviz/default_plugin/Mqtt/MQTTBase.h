@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <msgpack.hpp>
+//#include <msgpack.hpp>
 
 #include <string>
 
@@ -21,7 +21,7 @@ namespace MQTT {
     class MQTTMessage {
     public:
         std::string message;
-        MSGPACK_DEFINE(message)
+//        MSGPACK_DEFINE(message)
     };
 
     struct MQTTServerSettings {
