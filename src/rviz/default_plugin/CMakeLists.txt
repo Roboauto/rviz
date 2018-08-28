@@ -83,9 +83,9 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 string(REPLACE "." ";" VERSION_LIST ${CMAKE_CXX_COMPILER_VERSION})
 list(GET VERSION_LIST 0 COMPILER_VERSION_MAJOR)
 
-conan_cmake_install(CONANFILE . BUILD missing PROFILE ./conan_profiles/${CMAKE_CXX_COMPILER_ID}-${COMPILER_VERSION_MAJOR})
+conan_cmake_install(CONANFILE . BUILD missing PROFILE ${CMAKE_CURRENT_SOURCE_DIR}/conan_profiles/${CMAKE_CXX_COMPILER_ID}-${COMPILER_VERSION_MAJOR})
 
-include(./conanbuildinfo.cmake)
+include(${CMAKE_BINARY_DIR}/src/rviz/default_plugin/conanbuildinfo.cmake)
 
 conan_basic_setup(TARGETS)
 
@@ -115,6 +115,7 @@ file(GENERATE
   OUTPUT "${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/cmake/default_plugin_location.cmake"
   CONTENT "set(rviz_DEFAULT_PLUGIN_FILE_NAME $<TARGET_FILE_NAME:${rviz_DEFAULT_PLUGIN_LIBRARY_TARGET_NAME}>)"
 )
+
 # Install from the devel space to the install space.
 install(FILES "${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/cmake/default_plugin_location.cmake"
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/cmake
