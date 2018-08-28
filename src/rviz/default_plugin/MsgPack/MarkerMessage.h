@@ -35,7 +35,7 @@ namespace RoboCore {
   struct MarkerMsg {
     int sequence_id;
     std::string frame_id;
-    double time_stamp;
+    unsigned time_stamp;
 
     std::string name_space;
 
