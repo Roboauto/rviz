@@ -46,7 +46,7 @@ namespace rviz
 {
 
 PointCloudDisplay::PointCloudDisplay()
-  : point_cloud_common_( new PointCloudCommon( this ))
+  : point_cloud_common_( new PointCloudCommon( this )), _subscriber("rviz_pcl")
 {
   queue_size_property_ = new IntProperty( "Queue Size", 10,
                                           "Advanced: set the size of the incoming PointCloud message queue. "
@@ -68,6 +68,9 @@ void PointCloudDisplay::onInitialize()
 {
   MFDClass::onInitialize();
   point_cloud_common_->initialize( context_, scene_node_ );
+
+  _subscriber.connect(std::string("10.136.59.61").data());
+  _subscriber.setCallback(std::bind( &PointCloudDisplay::incomingMqttMessage, this, std::placeholders::_1));
 }
 
 void PointCloudDisplay::updateQueueSize()
@@ -89,6 +92,42 @@ void PointCloudDisplay::reset()
 {
   MFDClass::reset();
   point_cloud_common_->reset();
+}
+
+void PointCloudDisplay::incomingMqttMessage( std::shared_ptr<RoboCore::PointCloudMsg> & message_ptr){
+  incomingMqttMessage_(*message_ptr);
+}
+
+void PointCloudDisplay::incomingMqttMessage_(const RoboCore::PointCloudMsg & message) {
+  sensor_msgs::PointCloud pcl;
+
+  pcl.header.frame_id = message.frame_id;
+  pcl.header.stamp = ros::Time(message.time_stamp);
+
+  for(auto const &pt : message.points) {
+    geometry_msgs::Point32 p;
+    p.x = pt.x;
+    p.y= pt.y;
+    p.z = pt.z;
+    pcl.points.push_back(p);
+  }
+
+  for(auto const &channel : message.channels) {
+    sensor_msgs::ChannelFloat32 ch;
+    ch.name = channel.first;
+    for(auto const &pt : channel.second) {
+      ch.values.push_back(pt);
+    }
+    pcl.channels.push_back(ch);
+  }
+
+  point_cloud_common_->addMessage(sensor_msgs::PointCloud::Ptr(new sensor_msgs::PointCloud(pcl)));
+}
+
+void PointCloudDisplay::subscribe()
+{
+    MessageFilterDisplay<sensor_msgs::PointCloud>::subscribe();
+    _subscriber.subscribe(topic_property_->getValue().toString().toStdString(), MQTT::QOS::AT_MOST_ONCE);
 }
 
 } // namespace rviz

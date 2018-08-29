@@ -11,6 +11,7 @@
 
 #include <mosquittopp.h>
 #include <msgpack.hpp>
+#include <iostream>
 
 namespace MQTT {
 
@@ -26,16 +27,24 @@ namespace MQTT {
       }
 
       void subscribe(const std::string &topic, MQTT::QOS qos) {
-
         mosquittopp::unsubscribe(nullptr, _topic.c_str());
         _topic = topic;
-        mosquittopp::subscribe(nullptr, _topic.c_str(), qos);
+
+        while(true) {
+          // TODO: WTF? not working without sleep
+          std::cerr << "Mosquitto subscribe sleeps for 1s\n";
+          sleep(1);
+          auto x = mosquittopp::subscribe(nullptr, _topic.c_str(), qos);
+          if(x == 0)
+            break;
+          else
+            std::cerr << "Connection unsuccessful, retrying\n";
+        }
       }
 
       void unsubscribe() {
         mosquittopp::unsubscribe(nullptr, _topic.c_str());
       }
-
 
       void setCallback(std::function<void(std::shared_ptr<MessageType> &)> function) {
         _receive_callback = function;
@@ -57,14 +66,6 @@ namespace MQTT {
         _receive_callback(msgPtr);
       }
 
-/*
-        void on_subscribe(int mid, int qos_count , const int *granted_qos) override {}
-        void on_unsubscribe(int mid) override {}
-
-        //TODO check if needed
-        void on_log(int level, const char *str) override {}
-        void on_error() override {}
-*/
       std::string _clientId;
       MQTTServerSettings _serverSettings;
       std::string _topic;

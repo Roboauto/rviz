@@ -35,6 +35,9 @@
 #include <vector>
 
 #include <sensor_msgs/PointCloud.h>
+#include <MsgPack/MarkerMessage.h>
+#include <MsgPack/PointCloudMsg.h>
+#include <Mqtt/MQTTSubscriber.h>
 
 #include "rviz/message_filter_display.h"
 
@@ -73,9 +76,18 @@ protected:
   /** @brief Process a single message.  Overridden from MessageFilterDisplay. */
   virtual void processMessage( const sensor_msgs::PointCloudConstPtr& cloud );
 
+  virtual void subscribe();
+
   IntProperty* queue_size_property_;
 
   PointCloudCommon* point_cloud_common_;
+
+  // MQTT
+
+  void incomingMqttMessage(std::shared_ptr<RoboCore::PointCloudMsg> & message_ptr);
+  void incomingMqttMessage_(const RoboCore::PointCloudMsg & message);
+
+  MQTT::MQTTSubscriber<RoboCore::PointCloudMsg> _subscriber;
 };
 
 } // namespace rviz

@@ -65,9 +65,7 @@ set(SOURCE_FILES
   view_controllers/fixed_orientation_ortho_view_controller.cpp
   view_controllers/fps_view_controller.cpp
   wrench_display.cpp
-  wrench_visual.cpp
-  MsgPack/MarkerMessage.h
-  MsgPack/Types.h)
+  wrench_visual.cpp)
 
 
 

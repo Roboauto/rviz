@@ -83,7 +83,6 @@ MarkerDisplay::MarkerDisplay()
   queue_size_property_->setMin( 0 );
 
   namespaces_category_ = new Property( "Namespaces", QVariant(), "", this );
-
 }
 
 void MarkerDisplay::onInitialize()
@@ -118,24 +117,17 @@ void MarkerDisplay::incomingMqttMessage( std::shared_ptr<RoboCore::MarkerMsg> & 
 }
 
 void MarkerDisplay::incomingMqttMessage_(const RoboCore::MarkerMsg & message) {
-
   visualization_msgs::Marker marker;
 
-
-    // header
   marker.header.seq = message.sequence_id;
   marker.header.frame_id = message.frame_id;
-
   marker.header.stamp = ros::Time(message.time_stamp);
-    // ns
+
   marker.ns = message.name_space;
-    // id
   marker.id = message.id;
-    // type
   marker.type = message.type;
-    // action
   marker.action = message.action;
-    //  pose
+
   marker.pose.position.x = message.position.x;
   marker.pose.position.y = message.position.y;
   marker.pose.position.z = message.position.z;
@@ -143,20 +135,19 @@ void MarkerDisplay::incomingMqttMessage_(const RoboCore::MarkerMsg & message) {
   marker.pose.orientation.x = message.orientation.x;
   marker.pose.orientation.y = message.orientation.y;
   marker.pose.orientation.z = message.orientation.z;
-    //  scale
+
   marker.scale.x = message.scale.x;
   marker.scale.y = message.scale.y;
   marker.scale.z = message.scale.z;
-    // color
+
   marker.color.r = message.color.r;
   marker.color.g = message.color.g;
   marker.color.b = message.color.b;
   marker.color.a = message.color.a;
-    //  lifetime
+
   marker.lifetime = ros::Duration(message.lifetime);
-    // frame_locked
   marker.frame_locked = message.frame_locked;
-    // points
+
   for (auto point : message.points){
     geometry_msgs::Point pt;
     pt.x = point.x;
@@ -164,7 +155,7 @@ void MarkerDisplay::incomingMqttMessage_(const RoboCore::MarkerMsg & message) {
     pt.z = point.z;
     marker.points.push_back(pt);
   }
-    // colors
+
   for (auto color :  message.colors) {
     std_msgs::ColorRGBA next_color;
     next_color.r = color.r;
@@ -173,11 +164,9 @@ void MarkerDisplay::incomingMqttMessage_(const RoboCore::MarkerMsg & message) {
     next_color.a = color.a;
     marker.colors.push_back(next_color);
   }
-    // text
+
   marker.text = message.text;
-    // mesh_resource
   marker.mesh_resource = message.mesh_resource;
-    //mesh_use_embedded_materials
   marker.mesh_use_embedded_materials = message.mesh_use_embedded_materials;
 
   tf_filter_->add(visualization_msgs::Marker::Ptr(new visualization_msgs::Marker(marker)));
@@ -253,6 +242,7 @@ void MarkerDisplay::subscribe()
   {
     array_sub_.shutdown();
     sub_.unsubscribe();
+
     _subscriber.unsubscribe();
     _array_subscriber.unsubscribe();
     try
