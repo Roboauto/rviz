@@ -81,7 +81,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 string(REPLACE "." ";" VERSION_LIST ${CMAKE_CXX_COMPILER_VERSION})
 list(GET VERSION_LIST 0 COMPILER_VERSION_MAJOR)
 
-conan_cmake_install(CONANFILE . BUILD missing PROFILE ${CMAKE_CURRENT_SOURCE_DIR}/conan_profiles/${CMAKE_CXX_COMPILER_ID}-${COMPILER_VERSION_MAJOR})
+conan_cmake_install(CONANFILE . BUILD missing PROFILE ${CMAKE_SOURCE_DIR}/conan_profiles/${CMAKE_CXX_COMPILER_ID}-${COMPILER_VERSION_MAJOR})
 
 include(${CMAKE_BINARY_DIR}/src/rviz/default_plugin/conanbuildinfo.cmake)
 
