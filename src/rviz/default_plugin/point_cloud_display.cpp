@@ -46,7 +46,9 @@ namespace rviz
 {
 
 PointCloudDisplay::PointCloudDisplay()
-  : point_cloud_common_( new PointCloudCommon( this )), _subscriber("rviz_pcl")
+  : point_cloud_common_( new PointCloudCommon( this )),
+    serverSettings_("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE),
+    _subscriber("rviz_pcl", serverSettings_, "", std::bind( &PointCloudDisplay::incomingMqttMessage, this, std::placeholders::_1))
 {
   queue_size_property_ = new IntProperty( "Queue Size", 10,
                                           "Advanced: set the size of the incoming PointCloud message queue. "
@@ -68,9 +70,6 @@ void PointCloudDisplay::onInitialize()
 {
   MFDClass::onInitialize();
   point_cloud_common_->initialize( context_, scene_node_ );
-
-  _subscriber.connect(std::string("10.136.59.61").data());
-  _subscriber.setCallback(std::bind( &PointCloudDisplay::incomingMqttMessage, this, std::placeholders::_1));
 }
 
 void PointCloudDisplay::updateQueueSize()
@@ -126,8 +125,14 @@ void PointCloudDisplay::incomingMqttMessage_(const RoboCore::PointCloudMsg & mes
 
 void PointCloudDisplay::subscribe()
 {
-    MessageFilterDisplay<sensor_msgs::PointCloud>::subscribe();
-    _subscriber.subscribe(topic_property_->getValue().toString().toStdString(), MQTT::QOS::AT_MOST_ONCE);
+  MessageFilterDisplay<sensor_msgs::PointCloud>::subscribe();
+  _subscriber.subscribe(topic_property_->getValue().toString().toStdString());
+}
+
+void PointCloudDisplay::unsubscribe()
+{
+  MessageFilterDisplay<sensor_msgs::PointCloud>::unsubscribe();
+  _subscriber.unsubscribe();
 }
 
 } // namespace rviz

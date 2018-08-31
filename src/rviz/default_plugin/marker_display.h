@@ -184,6 +184,7 @@ private:
 
   void incomingMqttMessage_(const RoboCore::MarkerMsg & message);
 
+  MQTT::MQTTServerSettings serverSettings_;
   MQTT::MQTTSubscriber<RoboCore::MarkerMsg> _subscriber;
   MQTT::MQTTSubscriber<RoboCore::MarkerArrayMsg> _array_subscriber;
 };

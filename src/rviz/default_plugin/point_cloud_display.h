@@ -76,7 +76,8 @@ protected:
   /** @brief Process a single message.  Overridden from MessageFilterDisplay. */
   virtual void processMessage( const sensor_msgs::PointCloudConstPtr& cloud );
 
-  virtual void subscribe();
+  virtual void subscribe() override;
+  virtual void unsubscribe() override;
 
   IntProperty* queue_size_property_;
 
@@ -87,6 +88,7 @@ protected:
   void incomingMqttMessage(std::shared_ptr<RoboCore::PointCloudMsg> & message_ptr);
   void incomingMqttMessage_(const RoboCore::PointCloudMsg & message);
 
+  MQTT::MQTTServerSettings serverSettings_;
   MQTT::MQTTSubscriber<RoboCore::PointCloudMsg> _subscriber;
 };
 

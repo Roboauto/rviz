@@ -66,8 +66,9 @@ static const std::string k_home = "127.0.0.1";
 
 MarkerDisplay::MarkerDisplay()
   : Display()
-  , _subscriber("rviz_marker")
-  , _array_subscriber("rviz_marker_array")
+  , serverSettings_("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE)
+  , _subscriber("rviz_marker", serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1))
+  , _array_subscriber("rviz_marker_array", serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1))
 {
   marker_topic_property_ = new RosTopicProperty( "Marker Topic", "visualization_marker",
                                                  QString::fromStdString( ros::message_traits::datatype<visualization_msgs::Marker>() ),
@@ -97,13 +98,6 @@ void MarkerDisplay::onInitialize()
   tf_filter_->registerFailureCallback(boost::bind(&MarkerDisplay::failedMarker, this, _1, _2));
 
   namespace_config_enabled_state_.clear();
-
-  _subscriber.connect(k_stepan_ip.data());
-  _array_subscriber.connect(k_stepan_ip.data());
-
-  _subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
-  _array_subscriber.setCallback(std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
-
 }
 
 void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<RoboCore::MarkerArrayMsg> & message_array) {
@@ -243,15 +237,13 @@ void MarkerDisplay::subscribe()
     array_sub_.shutdown();
     sub_.unsubscribe();
 
-    _subscriber.unsubscribe();
-    _array_subscriber.unsubscribe();
     try
     {
       sub_.subscribe( update_nh_, marker_topic, queue_size_property_->getInt() );
       array_sub_ = update_nh_.subscribe( marker_topic + "_array", queue_size_property_->getInt(), &MarkerDisplay::incomingMarkerArray, this );
 
-      _subscriber.subscribe(marker_topic, MQTT::QOS::AT_LEAST_ONCE);
-      _array_subscriber.subscribe(marker_topic + "_array", MQTT::QOS::AT_LEAST_ONCE);
+      _subscriber.subscribe(marker_topic);
+      _array_subscriber.subscribe(marker_topic + "_array");
 
       setStatus( StatusProperty::Ok, "Topic", "OK" );
     }
@@ -266,6 +258,7 @@ void MarkerDisplay::unsubscribe()
 {
   sub_.unsubscribe();
   array_sub_.shutdown();
+
   _subscriber.unsubscribe();
   _array_subscriber.unsubscribe();
 }

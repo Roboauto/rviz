@@ -25,6 +25,10 @@ namespace MQTT {
     };
 
     struct MQTTServerSettings {
+        MQTTServerSettings(const std::string &host, const int port, const int qos) : host(host),
+                                                                                     port(port),
+                                                                                     QoS(qos)
+        {}
         std::string host;
         int port = k_std_mqtt_port;
         int QoS = QOS::AT_LEAST_ONCE;
