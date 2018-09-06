@@ -5,3 +5,6 @@
 
 [generators]
     cmake
+
+[options]
+    mosquitto:shared=True
