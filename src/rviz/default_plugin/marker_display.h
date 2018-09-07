@@ -42,8 +42,7 @@
 #endif
 
 #include "rviz/default_plugin/Mqtt/MQTTSubscriber.h"
-
-#include "rviz/default_plugin/MsgPack/MarkerMessage.h"
+#include "rviz/default_plugin/MQTTVisualizationMessages/include/MarkerMessage.h"
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -179,14 +178,14 @@ private:
 
 //MY MODIFICATIONS
 
-  void incomingMqttMessage(std::shared_ptr<RoboCore::MarkerMsg> & message_ptr);
-  void incomingMqttArrayMessage(std::shared_ptr<RoboCore::MarkerArrayMsg> & message_array_ptr);
+  void incomingMqttMessage(std::shared_ptr<MQTTVisualizationMsgs::MarkerMsg> & message_ptr);
+  void incomingMqttArrayMessage(std::shared_ptr<MQTTVisualizationMsgs::MarkerArrayMsg> & message_array_ptr);
 
-  void incomingMqttMessage_(const RoboCore::MarkerMsg & message);
+  void incomingMqttMessage_(const MQTTVisualizationMsgs::MarkerMsg & message);
 
   MQTT::MQTTServerSettings serverSettings_;
-  MQTT::MQTTSubscriber<RoboCore::MarkerMsg> _subscriber;
-  MQTT::MQTTSubscriber<RoboCore::MarkerArrayMsg> _array_subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg> _subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg> _array_subscriber;
 };
 
 /** @brief Manager of a single marker namespace.  Keeps a hash from

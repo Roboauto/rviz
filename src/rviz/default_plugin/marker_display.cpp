@@ -52,9 +52,6 @@
 
 #include "rviz/default_plugin/marker_display.h"
 
-#include "rviz/default_plugin/Mqtt/MQTTSubscriber.h"
-
-
 
 namespace rviz
 {
@@ -100,17 +97,17 @@ void MarkerDisplay::onInitialize()
   namespace_config_enabled_state_.clear();
 }
 
-void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<RoboCore::MarkerArrayMsg> & message_array) {
+void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<MQTTVisualizationMsgs::MarkerArrayMsg> & message_array) {
   for( auto message : message_array->markers){
     incomingMqttMessage_(message);
   }
 }
 
-void MarkerDisplay::incomingMqttMessage( std::shared_ptr<RoboCore::MarkerMsg> & message_ptr){
+void MarkerDisplay::incomingMqttMessage( std::shared_ptr<MQTTVisualizationMsgs::MarkerMsg> & message_ptr){
   incomingMqttMessage_(*message_ptr);
 }
 
-void MarkerDisplay::incomingMqttMessage_(const RoboCore::MarkerMsg & message) {
+void MarkerDisplay::incomingMqttMessage_(const MQTTVisualizationMsgs::MarkerMsg & message) {
   visualization_msgs::Marker marker;
 
   marker.header.seq = message.sequence_id;

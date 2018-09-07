@@ -93,11 +93,11 @@ void PointCloudDisplay::reset()
   point_cloud_common_->reset();
 }
 
-void PointCloudDisplay::incomingMqttMessage( std::shared_ptr<RoboCore::PointCloudMsg> & message_ptr){
+void PointCloudDisplay::incomingMqttMessage( std::shared_ptr<MQTTVisualizationMsgs::PointCloudMsg> & message_ptr){
   incomingMqttMessage_(*message_ptr);
 }
 
-void PointCloudDisplay::incomingMqttMessage_(const RoboCore::PointCloudMsg & message) {
+void PointCloudDisplay::incomingMqttMessage_(const MQTTVisualizationMsgs::PointCloudMsg & message) {
   sensor_msgs::PointCloud pcl;
 
   pcl.header.frame_id = message.frame_id;

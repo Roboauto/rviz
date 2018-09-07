@@ -1,0 +1,3 @@
+[submodule "src/rviz/default_plugin/MQTTVisualizationMessages"]
+	path = src/rviz/default_plugin/MQTTVisualizationMessages
+	url = https://github.com/Roboauto/MQTTVisualizationMessages.git

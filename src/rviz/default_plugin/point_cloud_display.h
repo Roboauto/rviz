@@ -35,8 +35,7 @@
 #include <vector>
 
 #include <sensor_msgs/PointCloud.h>
-#include <MsgPack/MarkerMessage.h>
-#include <MsgPack/PointCloudMsg.h>
+#include <MQTTVisualizationMessages/include/PointCloudMsg.h>
 #include <Mqtt/MQTTSubscriber.h>
 
 #include "rviz/message_filter_display.h"
@@ -83,13 +82,13 @@ protected:
 
   PointCloudCommon* point_cloud_common_;
 
-  // MQTT
+  // MQTT support
 
-  void incomingMqttMessage(std::shared_ptr<RoboCore::PointCloudMsg> & message_ptr);
-  void incomingMqttMessage_(const RoboCore::PointCloudMsg & message);
+  void incomingMqttMessage(std::shared_ptr<MQTTVisualizationMsgs::PointCloudMsg> & message_ptr);
+  void incomingMqttMessage_(const MQTTVisualizationMsgs::PointCloudMsg & message);
 
   MQTT::MQTTServerSettings serverSettings_;
-  MQTT::MQTTSubscriber<RoboCore::PointCloudMsg> _subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::PointCloudMsg> _subscriber;
 };
 
 } // namespace rviz
