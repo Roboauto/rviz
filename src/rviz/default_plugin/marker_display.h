@@ -186,6 +186,8 @@ private:
   MQTT::MQTTServerSettings serverSettings_;
   MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg> _subscriber;
   MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg> _array_subscriber;
+
+  static int MQTT_ID;
 };
 
 /** @brief Manager of a single marker namespace.  Keeps a hash from

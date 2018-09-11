@@ -45,10 +45,12 @@
 namespace rviz
 {
 
+int PointCloudDisplay::MQTT_ID = 0;
+
 PointCloudDisplay::PointCloudDisplay()
   : point_cloud_common_( new PointCloudCommon( this )),
     serverSettings_("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE),
-    _subscriber("rviz_pcl", serverSettings_, "", std::bind( &PointCloudDisplay::incomingMqttMessage, this, std::placeholders::_1))
+    _subscriber("rviz_pcl_" + std::to_string(MQTT_ID++), serverSettings_, "", std::bind( &PointCloudDisplay::incomingMqttMessage, this, std::placeholders::_1))
 {
   queue_size_property_ = new IntProperty( "Queue Size", 10,
                                           "Advanced: set the size of the incoming PointCloud message queue. "

@@ -56,16 +56,17 @@
 namespace rviz
 {
 
-
 static const std::string k_stepan_ip = "10.136.59.61";
 static const std::string k_home = "127.0.0.1";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int MarkerDisplay::MQTT_ID = 0;
+
 MarkerDisplay::MarkerDisplay()
   : Display()
   , serverSettings_("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE)
-  , _subscriber("rviz_marker", serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1))
-  , _array_subscriber("rviz_marker_array", serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1))
+  , _subscriber("rviz_marker_" + std::to_string(MQTT_ID), serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1))
+  , _array_subscriber("rviz_marker_array_" + std::to_string(MQTT_ID++), serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1))
 {
   marker_topic_property_ = new RosTopicProperty( "Marker Topic", "visualization_marker",
                                                  QString::fromStdString( ros::message_traits::datatype<visualization_msgs::Marker>() ),

@@ -89,6 +89,8 @@ protected:
 
   MQTT::MQTTServerSettings serverSettings_;
   MQTT::MQTTSubscriber<MQTTVisualizationMsgs::PointCloudMsg> _subscriber;
+
+  static int MQTT_ID;
 };
 
 } // namespace rviz
