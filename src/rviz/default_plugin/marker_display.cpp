@@ -56,18 +56,32 @@
 namespace rviz
 {
 
-static const std::string k_stepan_ip = "10.136.59.61";
-static const std::string k_home = "127.0.0.1";
+
+
+//roots of the client
+static const std::string k_marker_client_root = "rviz_marker_";
+static const std::string k_marker_array_client_root = "rviz_marker_array_";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int MarkerDisplay::MQTT_ID = 0;
 
+bool MarkerDisplay::invalidMqttDataHandler( const std::string & error){
+  //todo: mark error in property
+  setStatus( StatusProperty::Error, "MQTT Data:", QString::fromStdString(error) );
+  return true;
+}
+
 MarkerDisplay::MarkerDisplay()
   : Display()
-  , serverSettings_("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE)
-  , _subscriber("rviz_marker_" + std::to_string(MQTT_ID), serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1))
-  , _array_subscriber("rviz_marker_array_" + std::to_string(MQTT_ID++), serverSettings_, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1))
+  , _server_settings("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE)
 {
+
+  _subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg>( k_marker_client_root + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
+  _subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
+
+  _array_subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg>(k_marker_array_client_root + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
+  _array_subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
+
   marker_topic_property_ = new RosTopicProperty( "Marker Topic", "visualization_marker",
                                                  QString::fromStdString( ros::message_traits::datatype<visualization_msgs::Marker>() ),
                                                  "visualization_msgs::Marker topic to subscribe to.  <topic>_array will also"
@@ -79,6 +93,8 @@ MarkerDisplay::MarkerDisplay()
                                           " useful if your incoming TF data is delayed significantly from your Marker data, "
                                           "but it can greatly increase memory usage if the messages are big.",
                                           this, SLOT( updateQueueSize() ));
+  broker_address_property_  = new StringProperty( "MQTT Broker Address","127.0.0.1", "IP address of the broker used for communication over the MQTT", this, SLOT( updateBrokerAddress() ));
+
   queue_size_property_->setMin( 0 );
 
   namespaces_category_ = new Property( "Namespaces", QVariant(), "", this );
@@ -162,6 +178,8 @@ void MarkerDisplay::incomingMqttMessage_(const MQTTVisualizationMsgs::MarkerMsg 
   marker.mesh_use_embedded_materials = message.mesh_use_embedded_materials;
 
   tf_filter_->add(visualization_msgs::Marker::Ptr(new visualization_msgs::Marker(marker)));
+
+  setStatus( StatusProperty::Ok, "MQTT Data:", "Ok");
 }
 
 MarkerDisplay::~MarkerDisplay()
@@ -222,6 +240,26 @@ void MarkerDisplay::updateTopic()
   subscribe();
 }
 
+void MarkerDisplay::updateBrokerAddress(){
+  //todo update
+
+  _subscriber->unsubscribe();
+  _subscriber->disconnect();
+
+  //update server settings
+  _server_settings.host = broker_address_property_->getStdString();
+
+  //create new subscribers
+  delete _subscriber;
+  delete _array_subscriber;
+  _subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg>( "rviz_marker_" + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
+  _subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
+
+  _array_subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg>("rviz_marker_array_" + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
+  _array_subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
+  subscribe();
+}
+
 void MarkerDisplay::subscribe()
 {
   if( !isEnabled() )
@@ -240,8 +278,8 @@ void MarkerDisplay::subscribe()
       sub_.subscribe( update_nh_, marker_topic, queue_size_property_->getInt() );
       array_sub_ = update_nh_.subscribe( marker_topic + "_array", queue_size_property_->getInt(), &MarkerDisplay::incomingMarkerArray, this );
 
-      _subscriber.subscribe(marker_topic);
-      _array_subscriber.subscribe(marker_topic + "_array");
+      _subscriber->subscribe(marker_topic);
+      _array_subscriber->subscribe(marker_topic + "_array");
 
       setStatus( StatusProperty::Ok, "Topic", "OK" );
     }
@@ -257,8 +295,8 @@ void MarkerDisplay::unsubscribe()
   sub_.unsubscribe();
   array_sub_.shutdown();
 
-  _subscriber.unsubscribe();
-  _array_subscriber.unsubscribe();
+  _subscriber->unsubscribe();
+  _array_subscriber->unsubscribe();
 }
 
 void MarkerDisplay::deleteMarker(MarkerID id)

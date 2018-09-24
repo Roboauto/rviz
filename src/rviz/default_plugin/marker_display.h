@@ -59,6 +59,7 @@ class MarkerNamespace;
 class MarkerSelectionHandler;
 class Object;
 class RosTopicProperty;
+class StringProperty;
 
 typedef boost::shared_ptr<MarkerSelectionHandler> MarkerSelectionHandlerPtr;
 typedef boost::shared_ptr<MarkerBase> MarkerBasePtr;
@@ -116,10 +117,12 @@ protected:
 
   RosTopicProperty* marker_topic_property_;
   IntProperty* queue_size_property_;
+  StringProperty* broker_address_property_;
 
 private Q_SLOTS:
   void updateQueueSize();
   void updateTopic();
+  void updateBrokerAddress();
 
 private:
   /** @brief Delete all the markers within the given namespace. */
@@ -182,10 +185,11 @@ private:
   void incomingMqttArrayMessage(std::shared_ptr<MQTTVisualizationMsgs::MarkerArrayMsg> & message_array_ptr);
 
   void incomingMqttMessage_(const MQTTVisualizationMsgs::MarkerMsg & message);
+  bool invalidMqttDataHandler(const std::string & name);
 
-  MQTT::MQTTServerSettings serverSettings_;
-  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg> _subscriber;
-  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg> _array_subscriber;
+  MQTT::MQTTServerSettings _server_settings;
+  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg>* _subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg>* _array_subscriber;
 
   static int MQTT_ID;
 };
