@@ -213,12 +213,19 @@ void Swatch::updateData()
 }
 
 
+int MapDisplay::MQTT_ID = 0;
+
 MapDisplay::MapDisplay()
   : Display()
   , loaded_( false )
   , resolution_( 0.0f )
   , width_( 0 )
   , height_( 0 )
+  , serverSettings_("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE)
+  , _subscriber("rviz_occ_grid_" + std::to_string(MQTT_ID++),
+                serverSettings_,
+                "",
+                std::bind( &MapDisplay::incomingMqttMessage , this , std::placeholders::_1))
 {
   connect(this, SIGNAL( mapUpdated() ), this, SLOT( showMap() ));
   topic_property_ = new RosTopicProperty( "Topic", "",
@@ -430,6 +437,34 @@ void MapDisplay::onDisable()
   clear();
 }
 
+void MapDisplay::incomingMqttMessage(std::shared_ptr<MQTTVisualizationMessages::OccupancyGridMsg> & message_ptr) {
+    incomingMqttMessage_(*message_ptr);
+}
+
+
+void MapDisplay::incomingMqttMessage_(const MQTTVisualizationMessages::OccupancyGridMsg & message) {
+
+    nav_msgs::OccupancyGrid map;
+
+    map.header.frame_id = message.frame_id;
+    map.header.stamp = ros::Time(message.time_stamp);
+
+    for (const auto &d : message.data) {
+        map.data.push_back(d);
+    }
+
+    map.info.resolution = static_cast<float>(message.resolution);
+    map.info.width = static_cast<unsigned int>(message.width);
+    map.info.height = static_cast<unsigned int>(message.height);
+
+    current_map_ = map;
+    // updated via signal in case ros spinner is in a different thread
+    Q_EMIT mapUpdated();
+    loaded_ = true;
+    //showMap();
+}
+
+
 void MapDisplay::subscribe()
 {
   if ( !isEnabled() )
@@ -464,12 +499,14 @@ void MapDisplay::subscribe()
       setStatus( StatusProperty::Error, "Update Topic", QString( "Error subscribing: " ) + e.what() );
     }
   }
+  _subscriber.subscribe(topic_property_->getValue().toString().toStdString());
 }
 
 void MapDisplay::unsubscribe()
 {
   map_sub_.shutdown();
   update_sub_.shutdown();
+  _subscriber.unsubscribe();
 }
 
 void MapDisplay::updateAlpha()
