@@ -42,7 +42,7 @@
 #endif
 
 #include "rviz/default_plugin/Mqtt/MQTTSubscriber.h"
-#include "rviz/default_plugin/MQTTVisualizationMessages/include/MarkerMessage.h"
+#include "MQTTVisualizationMessages/include/MQTTVisualizationMessages/MarkerMessage.h"
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -181,15 +181,15 @@ private:
 
 //MY MODIFICATIONS
 
-  void incomingMqttMessage(std::shared_ptr<MQTTVisualizationMsgs::MarkerMsg> & message_ptr);
-  void incomingMqttArrayMessage(std::shared_ptr<MQTTVisualizationMsgs::MarkerArrayMsg> & message_array_ptr);
+  void incomingMqttMessage(std::shared_ptr<MQTTVisualizationMessages::MarkerMsg> & message_ptr);
+  void incomingMqttArrayMessage(std::shared_ptr<MQTTVisualizationMessages::MarkerArrayMsg> & message_array_ptr);
 
-  void incomingMqttMessage_(const MQTTVisualizationMsgs::MarkerMsg & message);
+  void incomingMqttMessage_(const MQTTVisualizationMessages::MarkerMsg & message);
   bool invalidMqttDataHandler(const std::string & name);
 
   MQTT::MQTTServerSettings _server_settings;
-  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg>* _subscriber;
-  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg>* _array_subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMessages::MarkerMsg>* _subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMessages::MarkerArrayMsg>* _array_subscriber;
 
   static int MQTT_ID;
 };

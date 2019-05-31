@@ -457,6 +457,15 @@ void MapDisplay::incomingMqttMessage_(const MQTTVisualizationMessages::Occupancy
     map.info.width = static_cast<unsigned int>(message.width);
     map.info.height = static_cast<unsigned int>(message.height);
 
+    map.info.origin.position.x = message.pose.x;
+    map.info.origin.position.y = message.pose.y;
+    map.info.origin.position.z = message.pose.z;
+
+    map.info.origin.orientation.w = message.orientation.w;
+    map.info.origin.orientation.x = message.orientation.x;
+    map.info.origin.orientation.y = message.orientation.y;
+    map.info.origin.orientation.z = message.orientation.z;
+
     current_map_ = map;
     // updated via signal in case ros spinner is in a different thread
     Q_EMIT mapUpdated();

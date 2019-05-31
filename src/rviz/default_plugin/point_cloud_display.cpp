@@ -95,11 +95,11 @@ void PointCloudDisplay::reset()
   point_cloud_common_->reset();
 }
 
-void PointCloudDisplay::incomingMqttMessage( std::shared_ptr<MQTTVisualizationMsgs::PointCloudMsg> & message_ptr){
+void PointCloudDisplay::incomingMqttMessage( std::shared_ptr<MQTTVisualizationMessages::PointCloudMsg> & message_ptr){
   incomingMqttMessage_(*message_ptr);
 }
 
-void PointCloudDisplay::incomingMqttMessage_(const MQTTVisualizationMsgs::PointCloudMsg & message) {
+void PointCloudDisplay::incomingMqttMessage_(const MQTTVisualizationMessages::PointCloudMsg & message) {
   sensor_msgs::PointCloud pcl;
 
   pcl.header.frame_id = message.frame_id;
