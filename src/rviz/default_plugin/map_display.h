@@ -176,7 +176,7 @@ protected:
   void incomingMqttMessage_(const MQTTVisualizationMessages::OccupancyGridMsg & message);
 
   MQTT::MQTTServerSettings serverSettings_;
-  MQTT::MQTTSubscriber<MQTTVisualizationMessages::OccupancyGridMsg> _subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMessages::OccupancyGridMsg> subscriber_;
 
   static int MQTT_ID;
 };
