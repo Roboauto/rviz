@@ -35,7 +35,7 @@
 #include <vector>
 
 #include <sensor_msgs/PointCloud.h>
-#include <MQTTVisualizationMessages/include/PointCloudMsg.h>
+#include "MQTTVisualizationMessages/include/MQTTVisualizationMessages/PointCloudMsg.h"
 #include <Mqtt/MQTTSubscriber.h>
 
 #include "rviz/message_filter_display.h"
@@ -84,11 +84,11 @@ protected:
 
   // MQTT support
 
-  void incomingMqttMessage(std::shared_ptr<MQTTVisualizationMsgs::PointCloudMsg> & message_ptr);
-  void incomingMqttMessage_(const MQTTVisualizationMsgs::PointCloudMsg & message);
+  void incomingMqttMessage(std::shared_ptr<MQTTVisualizationMessages::PointCloudMsg> & message_ptr);
+  void incomingMqttMessage_(const MQTTVisualizationMessages::PointCloudMsg & message);
 
   MQTT::MQTTServerSettings serverSettings_;
-  MQTT::MQTTSubscriber<MQTTVisualizationMsgs::PointCloudMsg> _subscriber;
+  MQTT::MQTTSubscriber<MQTTVisualizationMessages::PointCloudMsg> _subscriber;
 
   static int MQTT_ID;
 };

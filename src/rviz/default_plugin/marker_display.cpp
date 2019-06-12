@@ -76,10 +76,10 @@ MarkerDisplay::MarkerDisplay()
   , _server_settings("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE)
 {
 
-  _subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg>( k_marker_client_root + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
+  _subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMessages::MarkerMsg>( k_marker_client_root + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
   _subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
 
-  _array_subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg>(k_marker_array_client_root + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
+  _array_subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMessages::MarkerArrayMsg>(k_marker_array_client_root + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
   _array_subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
 
   marker_topic_property_ = new RosTopicProperty( "Marker Topic", "visualization_marker",
@@ -114,17 +114,17 @@ void MarkerDisplay::onInitialize()
   namespace_config_enabled_state_.clear();
 }
 
-void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<MQTTVisualizationMsgs::MarkerArrayMsg> & message_array) {
+void MarkerDisplay::incomingMqttArrayMessage(std::shared_ptr<MQTTVisualizationMessages::MarkerArrayMsg> & message_array) {
   for( auto message : message_array->markers){
     incomingMqttMessage_(message);
   }
 }
 
-void MarkerDisplay::incomingMqttMessage( std::shared_ptr<MQTTVisualizationMsgs::MarkerMsg> & message_ptr){
+void MarkerDisplay::incomingMqttMessage( std::shared_ptr<MQTTVisualizationMessages::MarkerMsg> & message_ptr){
   incomingMqttMessage_(*message_ptr);
 }
 
-void MarkerDisplay::incomingMqttMessage_(const MQTTVisualizationMsgs::MarkerMsg & message) {
+void MarkerDisplay::incomingMqttMessage_(const MQTTVisualizationMessages::MarkerMsg & message) {
   visualization_msgs::Marker marker;
 
   marker.header.seq = message.sequence_id;
@@ -252,10 +252,10 @@ void MarkerDisplay::updateBrokerAddress(){
   //create new subscribers
   delete _subscriber;
   delete _array_subscriber;
-  _subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerMsg>( "rviz_marker_" + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
+  _subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMessages::MarkerMsg>( "rviz_marker_" + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttMessage, this, std::placeholders::_1));
   _subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
 
-  _array_subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMsgs::MarkerArrayMsg>("rviz_marker_array_" + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
+  _array_subscriber = new MQTT::MQTTSubscriber<MQTTVisualizationMessages::MarkerArrayMsg>("rviz_marker_array_" + std::to_string(MQTT_ID++), _server_settings, "", std::bind( &MarkerDisplay::incomingMqttArrayMessage, this, std::placeholders::_1));
   _array_subscriber->setErrorHandler(std::bind( &MarkerDisplay::invalidMqttDataHandler, this, std::placeholders::_1));
   subscribe();
 }

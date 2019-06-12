@@ -45,6 +45,9 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <map_msgs/OccupancyGridUpdate.h>
 
+#include "rviz/default_plugin/MQTTVisualizationMessages/include/MQTTVisualizationMessages/OccupancyGridMsg.h"
+#include <Mqtt/MQTTSubscriber.h>
+
 #include "rviz/display.h"
 
 namespace Ogre
@@ -167,6 +170,15 @@ protected:
 
   BoolProperty* unreliable_property_;
   BoolProperty* transform_timestamp_property_;
+
+  // MQTT support
+  void incomingMqttMessage(std::shared_ptr<MQTTVisualizationMessages::OccupancyGridMsg> & message_ptr);
+  void incomingMqttMessage_(const MQTTVisualizationMessages::OccupancyGridMsg & message);
+
+  MQTT::MQTTServerSettings serverSettings_;
+  MQTT::MQTTSubscriber<MQTTVisualizationMessages::OccupancyGridMsg> subscriber_;
+
+  static int MQTT_ID;
 };
 
 } // namespace rviz
