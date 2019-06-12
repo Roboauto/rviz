@@ -222,7 +222,7 @@ MapDisplay::MapDisplay()
   , width_( 0 )
   , height_( 0 )
   , serverSettings_("127.0.0.1", 1883, MQTT::QOS::AT_LEAST_ONCE)
-  , _subscriber("rviz_occ_grid_" + std::to_string(MQTT_ID++),
+  , subscriber_("rviz_occ_grid_" + std::to_string(MQTT_ID++),
                 serverSettings_,
                 "",
                 std::bind( &MapDisplay::incomingMqttMessage , this , std::placeholders::_1))
@@ -508,14 +508,14 @@ void MapDisplay::subscribe()
       setStatus( StatusProperty::Error, "Update Topic", QString( "Error subscribing: " ) + e.what() );
     }
   }
-  _subscriber.subscribe(topic_property_->getValue().toString().toStdString());
+  subscriber_.subscribe(topic_property_->getValue().toString().toStdString());
 }
 
 void MapDisplay::unsubscribe()
 {
   map_sub_.shutdown();
   update_sub_.shutdown();
-  _subscriber.unsubscribe();
+  subscriber_.unsubscribe();
 }
 
 void MapDisplay::updateAlpha()
