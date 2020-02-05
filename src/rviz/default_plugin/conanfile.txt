@@ -1,6 +1,6 @@
 [requires]
     msgpack/3.0.1@bincrafters/stable
-    mosquitto/1.4.15@bincrafters/stable
+    mosquitto/1.4.15@roboauto/stable
     gtest/1.8.0@bincrafters/stable
 
 [generators]
