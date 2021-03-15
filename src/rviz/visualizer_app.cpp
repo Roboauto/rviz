@@ -65,40 +65,40 @@ namespace fs = boost::filesystem;
 
 namespace rviz
 {
-bool reloadShaders(std_srvs::Empty::Request& /*unused*/, std_srvs::Empty::Response& /*unused*/)
-{
-  ROS_INFO("Reloading materials.");
-  {
-    Ogre::ResourceManager::ResourceMapIterator it =
-        Ogre::MaterialManager::getSingleton().getResourceIterator();
-    while (it.hasMoreElements())
-    {
-      Ogre::ResourcePtr resource = it.getNext();
-      resource->reload();
-    }
-  }
-  ROS_INFO("Reloading high-level gpu shaders.");
-  {
-    Ogre::ResourceManager::ResourceMapIterator it =
-        Ogre::HighLevelGpuProgramManager::getSingleton().getResourceIterator();
-    while (it.hasMoreElements())
-    {
-      Ogre::ResourcePtr resource = it.getNext();
-      resource->reload();
-    }
-  }
-  ROS_INFO("Reloading gpu shaders.");
-  {
-    Ogre::ResourceManager::ResourceMapIterator it =
-        Ogre::GpuProgramManager::getSingleton().getResourceIterator();
-    while (it.hasMoreElements())
-    {
-      Ogre::ResourcePtr resource = it.getNext();
-      resource->reload();
-    }
-  }
-  return true;
-}
+//bool reloadShaders(std_srvs::Empty::Request& /*unused*/, std_srvs::Empty::Response& /*unused*/)
+//{
+//  ROS_INFO("Reloading materials.");
+//  {
+//    Ogre::ResourceManager::ResourceMapIterator it =
+//        Ogre::MaterialManager::getSingleton().getResourceIterator();
+//    while (it.hasMoreElements())
+//    {
+//      Ogre::ResourcePtr resource = it.getNext();
+//      resource->reload();
+//    }
+//  }
+//  ROS_INFO("Reloading high-level gpu shaders.");
+//  {
+//    Ogre::ResourceManager::ResourceMapIterator it =
+//        Ogre::HighLevelGpuProgramManager::getSingleton().getResourceIterator();
+//    while (it.hasMoreElements())
+//    {
+//      Ogre::ResourcePtr resource = it.getNext();
+//      resource->reload();
+//    }
+//  }
+//  ROS_INFO("Reloading gpu shaders.");
+//  {
+//    Ogre::ResourceManager::ResourceMapIterator it =
+//        Ogre::GpuProgramManager::getSingleton().getResourceIterator();
+//    while (it.hasMoreElements())
+//    {
+//      Ogre::ResourcePtr resource = it.getNext();
+//      resource->reload();
+//    }
+//  }
+//  return true;
+//}
 
 VisualizerApp::VisualizerApp() : app_(nullptr), continue_timer_(nullptr), frame_(nullptr)
 {
@@ -163,10 +163,10 @@ bool VisualizerApp::init(int argc, char** argv)
 
       if (vm.count("log-level-debug"))
       {
-        if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
-        {
-          ros::console::notifyLoggerLevelsChanged();
-        }
+//        if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug))
+//        {
+//          ros::console::notifyLoggerLevelsChanged();
+//        }
       }
     }
     catch (std::exception& e)
@@ -218,13 +218,13 @@ bool VisualizerApp::init(int argc, char** argv)
       frame_->setFullScreen(true);
     frame_->show();
 
-    ros::NodeHandle private_nh("~");
-    reload_shaders_service_ = private_nh.advertiseService("reload_shaders", reloadShaders);
-
-    load_config_service_ =
-        private_nh.advertiseService("load_config", &VisualizerApp::loadConfigCallback, this);
-    save_config_service_ =
-        private_nh.advertiseService("save_config", &VisualizerApp::saveConfigCallback, this);
+//    ros::NodeHandle private_nh("~");
+//    reload_shaders_service_ = private_nh.advertiseService("reload_shaders", reloadShaders);
+//
+//    load_config_service_ =
+//        private_nh.advertiseService("load_config", &VisualizerApp::loadConfigCallback, this);
+//    save_config_service_ =
+//        private_nh.advertiseService("save_config", &VisualizerApp::saveConfigCallback, this);
 
 #if CATCH_EXCEPTIONS
   }
@@ -263,21 +263,21 @@ void VisualizerApp::checkContinue()
   }
 }
 
-bool VisualizerApp::loadConfigCallback(rviz::SendFilePathRequest& req, rviz::SendFilePathResponse& res)
-{
-  fs::path path = req.path.data;
-  if (fs::is_regular_file(path))
-    res.success = frame_->loadDisplayConfigHelper(path.string());
-  else
-    res.success = false;
-  return true;
-}
-
-bool VisualizerApp::saveConfigCallback(rviz::SendFilePathRequest& req, rviz::SendFilePathResponse& res)
-{
-  res.success = frame_->saveDisplayConfig(QString::fromStdString(req.path.data));
-  return true;
-}
+//bool VisualizerApp::loadConfigCallback(rviz::SendFilePathRequest& req, rviz::SendFilePathResponse& res)
+//{
+//  fs::path path = req.path.data;
+//  if (fs::is_regular_file(path))
+//    res.success = frame_->loadDisplayConfigHelper(path.string());
+//  else
+//    res.success = false;
+//  return true;
+//}
+//
+//bool VisualizerApp::saveConfigCallback(rviz::SendFilePathRequest& req, rviz::SendFilePathResponse& res)
+//{
+//  res.success = frame_->saveDisplayConfig(QString::fromStdString(req.path.data));
+//  return true;
+//}
 
 
 } // namespace rviz

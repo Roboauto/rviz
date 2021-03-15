@@ -42,6 +42,7 @@
 
 namespace rviz
 {
+
 PointCloudDisplay::PointCloudDisplay() : point_cloud_common_(new PointCloudCommon(this))
 {
   // PointCloudCommon sets up a callback queue with a thread for each

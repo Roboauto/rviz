@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(rviz)
 
 if (POLICY CMP0042)
@@ -8,7 +8,7 @@ if (POLICY CMP0054)
   cmake_policy(SET CMP0054 NEW)
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -22,6 +22,140 @@ find_package(Boost REQUIRED
   system
   thread
 )
+
+#################################################################################################
+################################## Our custom hacks #############################################
+#################################################################################################
+
+function(add_service_files)
+endfunction(add_service_files)
+
+set(CATKIN_PACKAGE_INCLUDE_DESTINATION ${CMAKE_BINARY_DIR}/includes)
+set(CATKIN_PACKAGE_SHARE_DESTINATION ${CMAKE_BINARY_DIR}/shares)
+set(CATKIN_PACKAGE_LIB_DESTINATION ${CMAKE_BINARY_DIR}/lib)
+set(CATKIN_PACKAGE_BIN_DESTINATION ${CMAKE_BINARY_DIR}/bin)
+set(CATKIN_GLOBAL_BIN_DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+
+#CONAN config
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+          "${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+string(REPLACE "." ";" VERSION_LIST ${CMAKE_CXX_COMPILER_VERSION})
+list(GET VERSION_LIST 0 COMPILER_VERSION_MAJOR)
+
+conan_cmake_install(CONANFILE PATH_OR_REFERENCE ${PROJECT_SOURCE_DIR}/custom_impl/impl/conanfile.txt BUILD missing PROFILE ${CMAKE_SOURCE_DIR}/conan_profiles/${CMAKE_CXX_COMPILER_ID}-${COMPILER_VERSION_MAJOR})
+
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+
+conan_basic_setup(TARGETS)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/libs/cmake_modules)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/libs/cmake_modules/cmake/Modules)
+
+add_library(rospack
+    ${PROJECT_SOURCE_DIR}/libs/rospack/src/rospack.cpp
+    ${PROJECT_SOURCE_DIR}/libs/rospack/src/rospack_cmdline.cpp
+    ${PROJECT_SOURCE_DIR}/libs/rospack/src/rospack_backcompat.cpp
+    ${PROJECT_SOURCE_DIR}/libs/rospack/src/utils.cpp
+)
+
+target_include_directories(rospack
+        PUBLIC ${PROJECT_SOURCE_DIR}/libs/rospack/include)
+
+set(PYTHON_VERSION_MAJOR 2)
+set(PYTHON_VERSION_MINOR 7)
+
+find_package(PythonLibs "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" REQUIRED)
+
+target_link_libraries(rospack ${TinyXML2_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+
+add_library(pluginlib INTERFACE)
+target_include_directories(pluginlib INTERFACE ${PROJECT_SOURCE_DIR}/libs/pluginlib/pluginlib/include)
+
+add_library(rostime INTERFACE)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/libs/class_loader)
+target_include_directories(class_loader PUBLIC ${PROJECT_SOURCE_DIR}/libs/class_loader/include)
+
+
+add_library(roscpp
+    custom_impl/ros/init.cpp
+    custom_impl/ros/package.cpp
+    custom_impl/ros/callback_queue.cpp
+    custom_impl/ros/duration.cpp
+    custom_impl/ros/time.cpp
+    custom_impl/impl/init.cpp
+    custom_impl/impl/time.cpp
+)
+
+target_link_libraries(roscpp
+    PUBLIC
+      pluginlib
+      rospack
+      class_loader
+      CONAN_PKG::msgpack
+      CONAN_PKG::mosquitto
+)
+
+target_include_directories(roscpp
+    PUBLIC custom_impl libs/MQTTVisualizationMessages/include
+)
+
+include(FindCURL)
+if(NOT CURL_FOUND)
+  message("CURL not found!  Aborting...")
+  fail()
+endif(NOT CURL_FOUND)
+
+add_library(resource_retriever ${PROJECT_SOURCE_DIR}/libs/resource_retriever/src/retriever.cpp)
+target_link_libraries(resource_retriever roscpp ${CURL_LIBRARIES})
+target_include_directories(resource_retriever PUBLIC ${PROJECT_SOURCE_DIR}/libs/resource_retriever/include ${CURL_INCLUDE_DIRS})
+
+add_library(tf2_msgs INTERFACE)
+add_library(geometry_msgs INTERFACE)
+
+target_include_directories(tf2_msgs INTERFACE
+    ${PROJECT_SOURCE_DIR}/custom_impl
+)
+
+add_library(tf2
+  ${PROJECT_SOURCE_DIR}/libs/geometry/tf2/src/cache.cpp
+  ${PROJECT_SOURCE_DIR}/libs/geometry/tf2/src/buffer_core.cpp
+  ${PROJECT_SOURCE_DIR}/libs/geometry/tf2/src/static_cache.cpp)
+
+target_include_directories(tf2 PUBLIC
+  ${PROJECT_SOURCE_DIR}/libs/geometry/tf2/include
+)
+
+target_link_libraries(tf2
+  roscpp
+)
+
+add_library(tf2_geometry_msgs INTERFACE
+)
+
+target_include_directories(tf2_geometry_msgs INTERFACE ${PROJECT_SOURCE_DIR}/libs/geometry/tf2_geometry_msgs/include)
+
+#hacking around catkin!
+
+add_library(tf2_ros
+    custom_impl/tf2_ros/buffer.cpp)
+
+target_link_libraries(tf2_ros
+    PUBLIC tf2)
+
+set(catkin_LIBRARIES roscpp resource_retriever tf2 tf2_geometry_msgs tf2_ros)
+
+#################################################################################################
+################################## Our custom hacks #############################################
+#################################################################################################
 
 find_package(urdfdom_headers REQUIRED)
 
@@ -116,30 +250,23 @@ add_definitions(-DQT_NO_KEYWORDS)
 
 find_package(catkin REQUIRED
   COMPONENTS
-  cmake_modules
-  geometry_msgs
-  image_transport
-  interactive_markers
-  laser_geometry
-  map_msgs
-  message_filters
-  message_generation
-  nav_msgs
-  pluginlib
-  python_qt_binding
-  resource_retriever
-  rosbag
-  rosconsole
-  roscpp
-  roslib
-  rospy
-  sensor_msgs
-  std_msgs
-  std_srvs
-  tf2_ros
-  tf2_geometry_msgs
-  urdf
-  visualization_msgs
+#  cmake_modules
+#  geometry_msgs
+#  image_transport
+#  interactive_markers
+#  laser_geometry
+#  map_msgs
+#  message_filters
+#  message_generation
+#  nav_msgs
+#  pluginlib
+#  python_qt_binding
+#  resource_retriever
+#  sensor_msgs
+#  std_msgs
+#  std_srvs
+#  urdf
+#  visualization_msgs
 )
 
 find_package(PythonLibs "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" REQUIRED)
@@ -155,9 +282,13 @@ else()
   set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 endif()
 
-find_package(TinyXML2 REQUIRED)
+#generate_messages(
+#  DEPENDENCIES
+#  std_msgs
+#)
 
-catkin_python_setup()
+
+find_package(TinyXML2 REQUIRED)
 
 # Set the Qt version for use in the extras file.
 set(rviz_QT_VERSION ${QTVERSION})
@@ -173,49 +304,8 @@ add_service_files(
   SendFilePath.srv
 )
 
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
-
 set(EXPORT_HEADER_DIR "${CATKIN_DEVEL_PREFIX}/include")
 file(MAKE_DIRECTORY "${EXPORT_HEADER_DIR}")
-
-#catkin_lint: ignore_once external_include_path
-catkin_package(
-  CFG_EXTRAS
-    rviz-extras.cmake
-  INCLUDE_DIRS
-    src
-    ${EXPORT_HEADER_DIR}
-    ${EIGEN3_INCLUDE_DIRS}
-    ${OGRE_INCLUDE_DIRS}
-    ${OPENGL_INCLUDE_DIR}
-  LIBRARIES
-    rviz
-    ${OGRE_LIBRARIES}
-    ${rviz_ADDITIONAL_LIBRARIES}
-    ${OPENGL_LIBRARIES}
-  CATKIN_DEPENDS
-    geometry_msgs
-    image_transport
-    interactive_markers
-    laser_geometry
-    map_msgs
-    message_filters
-    message_runtime
-    nav_msgs
-    pluginlib
-    resource_retriever
-    roscpp
-    roslib
-    sensor_msgs
-    std_msgs
-    std_srvs
-    tf2_ros
-    urdf
-    visualization_msgs
-)
 
 #catkin_lint: ignore_once external_directory
 include_directories(src ${EXPORT_HEADER_DIR})
@@ -227,7 +317,6 @@ include_directories(SYSTEM
   ${TinyXML2_INCLUDE_DIRS}
   ${urdfdom_headers_INCLUDE_DIRS}
   ${ASSIMP_INCLUDE_DIRS}
-  ${catkin_INCLUDE_DIRS}
 )
 
 #### If gtk ends up being the best way to get the correct window

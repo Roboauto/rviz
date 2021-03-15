@@ -1,6 +1,7 @@
+
 add_subdirectory(rviz)
-add_subdirectory(image_view)
+#add_subdirectory(image_view)
 if (CATKIN_ENABLE_TESTING)
-  add_subdirectory(test)
-endif()
-add_subdirectory(python_bindings)
+    #add_subdirectory(test)
+endif ()
+#add_subdirectory(python_bindings)

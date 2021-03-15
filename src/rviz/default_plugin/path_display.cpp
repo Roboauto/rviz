@@ -432,6 +432,9 @@ void PathDisplay::processMessage(const nav_msgs::Path::ConstPtr& msg)
   Ogre::Quaternion orientation;
   if (!context_->getFrameManager()->getTransform(msg->header, position, orientation))
   {
+
+    setStatus(StatusProperty::Error, "Topic", QString{"Error transforming from frame "} + msg->header.frame_id.c_str() + " to frame " +
+    qPrintable(fixed_frame_));
     ROS_DEBUG("Error transforming from frame '%s' to frame '%s'", msg->header.frame_id.c_str(),
               qPrintable(fixed_frame_));
   }

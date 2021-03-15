@@ -253,10 +253,19 @@ bool FrameManager::transform(const std::string& frame,
       pose.orientation.w == 0.0)
     pose.orientation.w = 1.0;
 
+  bool correctState = true;
   // convert pose into fixed_frame_
   try
   {
-    tf2::doTransform(pose, pose, tf_buffer_->lookupTransform(fixed_frame_, frame, time));
+    try
+    {
+      tf2::doTransform(pose, pose, tf_buffer_->lookupTransform(fixed_frame_, frame, time));
+    }
+    catch (const tf2::ExtrapolationException &except)
+    {
+      tf2::doTransform(pose, pose, tf_buffer_->lookupTransform(fixed_frame_, frame, ros::Time()));
+      correctState = false;
+    }
   }
   catch (std::runtime_error& e)
   {
@@ -269,7 +278,7 @@ bool FrameManager::transform(const std::string& frame,
   orientation =
       Ogre::Quaternion(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
 
-  return true;
+  return correctState;
 }
 
 bool FrameManager::frameHasProblems(const std::string& frame, ros::Time /*time*/, std::string& error)

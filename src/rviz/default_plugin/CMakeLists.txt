@@ -1,23 +1,23 @@
 set(SOURCE_FILES
   axes_display.cpp
-  camera_display.cpp
+#  camera_display.cpp
   covariance_visual.cpp
   covariance_property.cpp
-  depth_cloud_display.cpp
-  depth_cloud_mld.cpp
-  effort_display.cpp
-  effort_visual.cpp
-  fluid_pressure_display.cpp
+#  depth_cloud_display.cpp
+#  depth_cloud_mld.cpp
+#  effort_display.cpp
+#   effort_visual.cpp
+#  fluid_pressure_display.cpp
   grid_cells_display.cpp
   grid_display.cpp
-  illuminance_display.cpp
-  image_display.cpp
-  interactive_marker_display.cpp
-  interactive_markers/integer_action.cpp
-  interactive_markers/interactive_marker_control.cpp
-  interactive_markers/interactive_marker.cpp
-  laser_scan_display.cpp
-  map_display.cpp
+#  illuminance_display.cpp
+#  image_display.cpp
+#  interactive_marker_display.cpp
+#  interactive_markers/integer_action.cpp
+#  interactive_markers/interactive_marker_control.cpp
+#  interactive_markers/interactive_marker.cpp
+#  laser_scan_display.cpp
+#  map_display.cpp
   marker_array_display.cpp
   marker_display.cpp
   marker_utils.cpp
@@ -31,25 +31,25 @@ set(SOURCE_FILES
   markers/shape_marker.cpp
   markers/text_view_facing_marker.cpp
   markers/triangle_list_marker.cpp
-  odometry_display.cpp
+#  odometry_display.cpp
   path_display.cpp
-  point_display.cpp
-  point_visual.cpp
-  point_cloud2_display.cpp
-  point_cloud_common.cpp
-  point_cloud_display.cpp
-  point_cloud_transformer.h
-  point_cloud_transformers.cpp
-  polygon_display.cpp
-  pose_array_display.cpp
-  pose_display.cpp
-  pose_with_covariance_display.cpp
-  range_display.cpp
-  relative_humidity_display.cpp
-  robot_model_display.cpp
-  screw_display.cpp
-  screw_visual.cpp
-  temperature_display.cpp
+#  point_display.cpp
+#  point_visual.cpp
+#  point_cloud2_display.cpp
+#  point_cloud_common.cpp
+#  point_cloud_display.cpp
+#  point_cloud_transformer.h
+#  point_cloud_transformers.cpp
+#  polygon_display.cpp
+#  pose_array_display.cpp
+#  pose_display.cpp
+#  pose_with_covariance_display.cpp
+#  range_display.cpp
+#  relative_humidity_display.cpp
+#  robot_model_display.cpp
+#  screw_display.cpp
+#  screw_visual.cpp
+#  temperature_display.cpp
   tf_display.cpp
   tools/focus_tool.cpp
   tools/measure_tool.cpp

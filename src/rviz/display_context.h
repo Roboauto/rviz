@@ -43,8 +43,7 @@ namespace Ogre
 class SceneManager;
 }
 
-namespace ros
-{
+namespace ros {
 class CallbackQueueInterface;
 }
 

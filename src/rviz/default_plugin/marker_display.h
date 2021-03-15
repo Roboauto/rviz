@@ -71,6 +71,7 @@ class MarkerDisplay : public Display
 {
   Q_OBJECT
 public:
+
   MarkerDisplay();
   ~MarkerDisplay() override;
 
