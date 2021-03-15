@@ -1,0 +1,30 @@
+[submodule "src/rviz/default_plugin/MQTTVisualizationMessages2"]
+	path = src/rviz/default_plugin/MQTTVisualizationMessages2
+	url = https://github.com/Roboauto/MQTTVisualizationMessages2.git
+[submodule "libs/geometry"]
+	path = libs/geometry
+	url = https://github.com/ros/geometry2.git
+[submodule "libs/pluginlib"]
+	path = libs/pluginlib
+	url = https://github.com/ros/pluginlib.git
+[submodule "libs/class_loader"]
+	path = libs/class_loader
+	url = https://github.com/ros/class_loader.git
+[submodule "libs/resource_retriever"]
+	path = libs/resource_retriever
+	url = https://github.com/ros/resource_retriever.git
+[submodule "libs/rospack"]
+	path = libs/rospack
+	url = https://github.com/ros/rospack.git
+[submodule "libs/robo-core"]
+	path = libs/robo-core
+	url = git@git.roboauto.tech:main/robo-core.git
+[submodule "libs/robo-core-internal"]
+	path = libs/robo-core-internal
+	url = git@git.roboauto.tech:main/robo-core-internal.git
+[submodule "libs/MQTTVisualizationMessages2"]
+	path = libs/MQTTVisualizationMessages2
+	url = https://github.com/Roboauto/MQTTVisualizationMessages2.git
+[submodule "libs/cmake_modules"]
+	path = libs/cmake_modules
+	url = https://github.com/ros/cmake_modules.git

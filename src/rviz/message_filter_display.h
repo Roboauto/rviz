@@ -168,7 +168,7 @@ protected:
         transport_hint = ros::TransportHints().unreliable();
       }
       sub_.subscribe(update_nh_, topic_property_->getTopicStd(),
-                     static_cast<uint32_t>(queue_size_property_->getInt()), transport_hint);
+                     static_cast<uint32_t>(queue_size_property_->getInt())/*, transport_hint*/);
       setStatus(StatusProperty::Ok, "Topic", "OK");
     }
     catch (ros::Exception& e)

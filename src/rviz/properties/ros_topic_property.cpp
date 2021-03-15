@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ros/master.h"
+#include <ros/master.h>
 
 #include <rviz/properties/ros_topic_property.h>
 
