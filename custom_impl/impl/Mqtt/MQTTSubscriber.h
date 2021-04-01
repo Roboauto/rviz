@@ -69,7 +69,7 @@ namespace MQTT {
 
     private:
         void on_connect(int rc) override {
-            mosquittopp::subscribe(nullptr, _topic.c_str());
+            subscribe();
         }
 
         void on_message(const struct mosquitto_message* message) override {
@@ -96,7 +96,7 @@ namespace MQTT {
          * Resubscriber to the the previously subsrcibed topic
          */
         void subscribe() {
-          mosquittopp::subscribe(nullptr, _topic.c_str());
+          mosquittopp::subscribe(nullptr, _topic.c_str(), _serverSettings.QoS);
         }
 
         std::string _clientId;

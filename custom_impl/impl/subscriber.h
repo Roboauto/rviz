@@ -42,7 +42,20 @@ namespace impl { namespace Subscriber {
   std::shared_ptr<ISubscriber>
   create(const std::string& topic, int qSize, std::function<void(const boost::shared_ptr<const T>&)> f, std::function<void(const std::string& error)> errorCallback)
   {
-    MQTT::MQTTServerSettings settings{"localhost", 1883};
+
+    MQTT::MQTTServerSettings settings{"localhost", 1883, 0};
+    if(const char* rvizIP = std::getenv("RVIZ_IP")) {
+      settings.host = rvizIP;
+    }
+
+    if(const char* rvizPort = std::getenv("RVIZ_PORT")) {
+      settings.port = std::stoi(rvizPort);
+    }
+
+    if(const char* rvizQOS = std::getenv("RVIZ_QOS")) {
+      settings.QoS = std::stoi(rvizQOS);
+    }
+
     auto topics = initGetTopics();
     for(const auto top: topics) {
       if(top.name == topic ) {
