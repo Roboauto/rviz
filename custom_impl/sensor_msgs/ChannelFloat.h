@@ -6,6 +6,6 @@ namespace sensor_msgs {
     struct ChannelFloat {
         std::string name;
 
-        std::vector<float> value;
+        std::vector<float> values;
     };
 };

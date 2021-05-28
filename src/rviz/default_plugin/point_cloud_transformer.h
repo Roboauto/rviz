@@ -39,6 +39,10 @@
 #include <OgreColourValue.h>
 
 #include <rviz/ogre_helpers/point_cloud.h>
+
+#include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
+
 #endif
 
 namespace Ogre

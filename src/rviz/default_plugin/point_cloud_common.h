@@ -45,7 +45,7 @@
 #include <ros/spinner.h>
 #include <ros/callback_queue.h>
 
-#include <message_filters/time_sequencer.h>
+//#include <message_filters/time_sequencer.h>
 
 #include <pluginlib/class_loader.hpp>
 

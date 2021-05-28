@@ -11,7 +11,7 @@ namespace ros {
  * is called, or its destructor is called
  *
  * AsyncSpinner is reference counted internally, so if you copy one it will continue spinning until all
- * copies have destructed (or stop() has been called on one of them)
+ * copies have destructed (or stop() has b  een called on one of them)
  */
     class AsyncSpinner {
     public:
