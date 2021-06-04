@@ -5,22 +5,25 @@
 #include "PointField.h"
 
 namespace sensor_msgs {
-    struct PointCLoud2 {
-        std_msgs::Header header;
+    struct PointCloud2 {
 
-        unsigned int height;
-        unsigned int width;
+      using ConstPtr = boost::shared_ptr<const PointCloud2>;
+
+         std_msgs::Header header;
+
+        uint32_t height;
+        uint32_t width;
 
         std::vector<PointField> fields;
 
         bool is_bigendian;
-        unsigned int point_step;
-        unsigned int row_step;
-        std::vector<unsigned char> data;
+        uint32_t point_step;
+        uint32_t row_step;
+        std::vector<uint8_t> data;
 
         bool is_dense;
-
-        double fluid_pressure;
-        double variance;
     };
-};
+
+    using PointCloud2ConstPtr = boost::shared_ptr<const PointCloud2>;
+    using PointCloud2Ptr = boost::shared_ptr<PointCloud2>;
+}

@@ -36,10 +36,10 @@ set(SOURCE_FILES
 #  point_display.cpp
 #  point_visual.cpp
 #  point_cloud2_display.cpp
-#  point_cloud_common.cpp
-#  point_cloud_display.cpp
-#  point_cloud_transformer.h
-#  point_cloud_transformers.cpp
+  point_cloud_common.cpp
+  point_cloud_display.cpp
+  point_cloud_transformer.h
+  point_cloud_transformers.cpp
 #  polygon_display.cpp
 #  pose_array_display.cpp
 #  pose_display.cpp

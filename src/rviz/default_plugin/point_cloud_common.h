@@ -187,7 +187,7 @@ private:
   void setPropertiesHidden(const QList<Property*>& props, bool hide);
   void fillTransformerOptions(EnumProperty* prop, uint32_t mask);
 
-  ros::AsyncSpinner spinner_;
+  //ros::AsyncSpinner spinner_;
   ros::CallbackQueue cbqueue_;
 
   D_CloudInfo cloud_infos_;

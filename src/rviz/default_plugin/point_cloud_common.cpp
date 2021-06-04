@@ -307,7 +307,7 @@ void PointCloudCommon::CloudInfo::clear()
 
 PointCloudCommon::PointCloudCommon(Display* display)
   : auto_size_(false)
-  , spinner_(1, &cbqueue_)
+  //, spinner_(1, &cbqueue_)
   , new_xyz_transformer_(false)
   , new_color_transformer_(false)
   , needs_retransform_(false)
@@ -378,12 +378,12 @@ void PointCloudCommon::initialize(DisplayContext* context, Ogre::SceneNode* scen
   updateAlpha();
   updateSelectable();
 
-  spinner_.start();
+  //spinner_.start();
 }
 
 PointCloudCommon::~PointCloudCommon()
 {
-  spinner_.stop();
+  //spinner_.stop();
 
   if (transformer_class_loader_)
   {
