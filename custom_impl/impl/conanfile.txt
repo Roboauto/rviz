@@ -3,7 +3,7 @@
     mosquitto/1.6.12@roboauto-conan/stable
 
 [generators]
-    cmake
+    cmake_find_package_multi
 
 [options]
     mosquitto:shared=True
